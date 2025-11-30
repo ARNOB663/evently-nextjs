@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+Design Animated Homepage/
 
 # debug
 npm-debug.log*
