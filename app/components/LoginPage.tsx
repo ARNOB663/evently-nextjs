@@ -1,14 +1,34 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
 
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-purple-50 relative overflow-hidden py-12 px-4">
@@ -418,8 +438,8 @@ export function LoginPage() {
                 transition={{ delay: 0.5, duration: 0.8 }}
                 className="text-center mt-8"
               >
-                <h2 className="text-3xl text-slate-800 mb-3">Secure Login</h2>
-                <p className="text-slate-600">Access your account with confidence</p>
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">Secure Login</h2>
+                <p className="text-gray-700">Access your account with confidence</p>
               </motion.div>
             </div>
           </motion.div>
@@ -445,26 +465,41 @@ export function LoginPage() {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.2, duration: 0.5 }}
                   >
-                    <h1 className="text-3xl sm:text-4xl text-slate-800 mb-3">Login</h1>
-                    <p className="text-slate-500 text-sm sm:text-base">Welcome back! Please enter your details</p>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Login</h1>
+                    <p className="text-gray-600 text-sm sm:text-base">Welcome back! Please enter your details</p>
                   </motion.div>
                 </div>
 
                 {/* Login Form */}
-                <form className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Error Message */}
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
+
                   {/* Email Input */}
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
                   >
-                    <label className="block text-sm text-slate-700 mb-2">Email Address</label>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">Email Address</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         type="email"
                         placeholder="Email address"
-                        className="pl-12 pr-4 py-5 sm:py-6 rounded-2xl border-2 border-slate-200 bg-slate-50/50 focus:border-blue-400 focus:bg-white transition-all"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={loading}
+                        className="pl-12 pr-4 py-5 sm:py-6 rounded-2xl border-2 border-slate-200 bg-slate-50/50 focus:border-blue-400 focus:bg-white transition-all text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
                   </motion.div>
@@ -475,18 +510,23 @@ export function LoginPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4, duration: 0.5 }}
                   >
-                    <label className="block text-sm text-slate-700 mb-2">Password</label>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         type={showPassword ? 'text' : 'password'}
                         placeholder="••••••••"
-                        className="pl-12 pr-12 py-5 sm:py-6 rounded-2xl border-2 border-slate-200 bg-slate-50/50 focus:border-blue-400 focus:bg-white transition-all"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={loading}
+                        className="pl-12 pr-12 py-5 sm:py-6 rounded-2xl border-2 border-slate-200 bg-slate-50/50 focus:border-blue-400 focus:bg-white transition-all text-gray-900 placeholder:text-gray-400"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                        disabled={loading}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -500,7 +540,7 @@ export function LoginPage() {
                     transition={{ delay: 0.5, duration: 0.5 }}
                     className="flex justify-end"
                   >
-                    <a href="#" className="text-sm text-slate-600 hover:text-slate-800 transition-colors">
+                    <a href="#" className="text-sm text-gray-700 hover:text-gray-900 transition-colors font-medium">
                       Forgot Password?
                     </a>
                   </motion.div>
@@ -510,14 +550,22 @@ export function LoginPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: loading ? 1 : 1.02 }}
+                    whileTap={{ scale: loading ? 1 : 0.98 }}
                   >
                     <Button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-5 sm:py-6 rounded-2xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-5 sm:py-6 rounded-2xl shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Login
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Logging in...
+                        </>
+                      ) : (
+                        'Login'
+                      )}
                     </Button>
                   </motion.div>
                 </form>
@@ -533,7 +581,7 @@ export function LoginPage() {
                     <div className="w-full border-t border-slate-200" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-slate-500">Or continue with</span>
+                    <span className="px-4 bg-white text-gray-600">Or continue with</span>
                   </div>
                 </motion.div>
 
@@ -575,12 +623,12 @@ export function LoginPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.9, duration: 0.5 }}
-                  className="text-center text-slate-600 mt-8 text-sm sm:text-base"
+                  className="text-center text-gray-700 mt-8 text-sm sm:text-base"
                 >
                   Don't have an account?{' '}
                   <Link 
                     href="/register"
-                    className="text-blue-600 hover:text-blue-700 transition-colors"
+                    className="text-blue-600 hover:text-blue-700 transition-colors font-semibold"
                   >
                     Sign up
                   </Link>
