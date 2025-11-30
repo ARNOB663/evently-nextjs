@@ -3,12 +3,9 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-interface NavbarProps {
-  onNavigate?: (page: string) => void;
-}
-
-export function Navbar({ onNavigate }: NavbarProps) {
+export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -22,8 +19,7 @@ export function Navbar({ onNavigate }: NavbarProps) {
   }, []);
 
   // Close mobile menu when navigating
-  const handleNavigate = (page: string) => {
-    onNavigate?.(page);
+  const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
   };
 
@@ -60,13 +56,13 @@ export function Navbar({ onNavigate }: NavbarProps) {
 
         <div className="relative flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4">
           {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex items-center space-x-2 cursor-pointer"
-            onClick={() => handleNavigate('home')}
-          >
+          <Link href="/">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="flex items-center space-x-2 cursor-pointer"
+            >
             <div className="relative">
               <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-1.5 sm:p-2 rounded-lg">
                 <svg
@@ -86,6 +82,7 @@ export function Navbar({ onNavigate }: NavbarProps) {
             </div>
             <span className="text-base sm:text-lg md:text-xl text-gray-900">Events & Activities</span>
           </motion.div>
+          </Link>
 
           {/* Navigation Links */}
           <motion.div
@@ -95,7 +92,6 @@ export function Navbar({ onNavigate }: NavbarProps) {
             className="hidden md:flex items-center space-x-10"
           >
             <button
-              onClick={() => handleNavigate('events')}
               className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
             >
               Browse Events
@@ -107,7 +103,6 @@ export function Navbar({ onNavigate }: NavbarProps) {
               Features
             </a>
             <button
-              onClick={() => handleNavigate('host')}
               className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
             >
               Host Dashboard
@@ -122,20 +117,20 @@ export function Navbar({ onNavigate }: NavbarProps) {
             className="hidden md:flex items-center space-x-4"
           >
             {/* Login Button */}
-            <button
-              onClick={() => handleNavigate('login')}
+            <Link
+              href="/login"
               className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium"
             >
               Login
-            </button>
+            </Link>
 
             {/* Sign Up Button */}
-            <button
-              onClick={() => handleNavigate('login-choice')}
+            <Link
+              href="/login-choice"
               className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm sm:text-base"
             >
               Join us
-            </button>
+            </Link>
           </motion.div>
 
           {/* Mobile Menu Button */}
@@ -186,22 +181,23 @@ export function Navbar({ onNavigate }: NavbarProps) {
 
               {/* Navigation Links */}
               <div className="p-6 space-y-2">
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                  onClick={() => handleNavigate('home')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                >
-                  <Home className="w-5 h-5 text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Home</span>
-                </motion.button>
+                <Link href="/" onClick={handleLinkClick}>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                  >
+                    <Home className="w-5 h-5 text-teal-600" />
+                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Home</span>
+                  </motion.div>
+                </Link>
 
                 <motion.button
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.15 }}
-                  onClick={() => handleNavigate('events')}
+                  onClick={handleLinkClick}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
                 >
                   <Calendar className="w-5 h-5 text-teal-600" />
@@ -226,7 +222,7 @@ export function Navbar({ onNavigate }: NavbarProps) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.25 }}
-                  onClick={() => handleNavigate('host')}
+                  onClick={handleLinkClick}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
                 >
                   <LayoutDashboard className="w-5 h-5 text-teal-600" />
@@ -241,27 +237,29 @@ export function Navbar({ onNavigate }: NavbarProps) {
 
               {/* Auth Actions */}
               <div className="p-6 space-y-3">
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={() => handleNavigate('login')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-teal-400 transition-all group"
-                >
-                  <LogIn className="w-5 h-5 text-gray-600 group-hover:text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Login</span>
-                </motion.button>
+                <Link href="/login" onClick={handleLinkClick}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-teal-400 transition-all group"
+                  >
+                    <LogIn className="w-5 h-5 text-gray-600 group-hover:text-teal-600" />
+                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Login</span>
+                  </motion.div>
+                </Link>
 
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
-                  onClick={() => handleNavigate('login-choice')}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  <span className="font-semibold">Join us</span>
-                </motion.button>
+                <Link href="/login-choice" onClick={handleLinkClick}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    <span className="font-semibold">Join us</span>
+                  </motion.div>
+                </Link>
               </div>
             </motion.div>
           </>
