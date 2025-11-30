@@ -1,13 +1,15 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Handle scroll effect
   useEffect(() => {
@@ -20,6 +22,11 @@ export function Navbar() {
 
   // Close mobile menu when navigating
   const handleLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
     setIsMobileMenuOpen(false);
   };
 
@@ -102,11 +109,18 @@ export function Navbar() {
             >
               Features
             </a>
-            <button
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
-            >
-              Host Dashboard
-            </button>
+            {isAuthenticated && user && (
+              <span className="text-gray-700">
+                {user.role === 'host' || user.role === 'admin' ? 'Host Dashboard' : 'View Events'}
+              </span>
+            )}
+            {!isAuthenticated && (
+              <button
+                className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
+              >
+                Host Dashboard
+              </button>
+            )}
           </motion.div>
 
           {/* Auth Buttons */}
@@ -116,21 +130,51 @@ export function Navbar() {
             transition={{ delay: 0.4, duration: 0.5 }}
             className="hidden md:flex items-center space-x-4"
           >
-            {/* Login Button */}
-            <Link
-              href="/login"
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium"
-            >
-              Login
-            </Link>
+            {isAuthenticated && user ? (
+              <>
+                {/* User Info */}
+                <div className="flex items-center space-x-3">
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.fullName}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                  <span className="text-gray-700 font-medium text-sm">{user.fullName}</span>
+                </div>
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-red-600 transition-colors duration-200 font-medium flex items-center space-x-1"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Login Button */}
+                <Link
+                  href="/login"
+                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium"
+                >
+                  Login
+                </Link>
 
-            {/* Sign Up Button */}
-            <Link
-              href="/login-choice"
-              className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm sm:text-base"
-            >
-              Join us
-            </Link>
+                {/* Sign Up Button */}
+                <Link
+                  href="/login-choice"
+                  className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm sm:text-base"
+                >
+                  Join us
+                </Link>
+              </>
+            )}
           </motion.div>
 
           {/* Mobile Menu Button */}
@@ -218,16 +262,32 @@ export function Navbar() {
                   <span className="text-gray-700 group-hover:text-teal-600 font-medium">Features</span>
                 </motion.button>
 
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 }}
-                  onClick={handleLinkClick}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                >
-                  <LayoutDashboard className="w-5 h-5 text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Host Dashboard</span>
-                </motion.button>
+                {isAuthenticated && user && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                    onClick={handleLinkClick}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                  >
+                    <LayoutDashboard className="w-5 h-5 text-teal-600" />
+                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">
+                      {user.role === 'host' || user.role === 'admin' ? 'Host Dashboard' : 'View Events'}
+                    </span>
+                  </motion.div>
+                )}
+                {!isAuthenticated && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                    onClick={handleLinkClick}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                  >
+                    <LayoutDashboard className="w-5 h-5 text-teal-600" />
+                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Host Dashboard</span>
+                  </motion.button>
+                )}
               </div>
 
               {/* Divider */}
@@ -237,29 +297,68 @@ export function Navbar() {
 
               {/* Auth Actions */}
               <div className="p-6 space-y-3">
-                <Link href="/login" onClick={handleLinkClick}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-teal-400 transition-all group"
-                  >
-                    <LogIn className="w-5 h-5 text-gray-600 group-hover:text-teal-600" />
-                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Login</span>
-                  </motion.div>
-                </Link>
+                {isAuthenticated && user ? (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200"
+                    >
+                      {user.profileImage ? (
+                        <img
+                          src={user.profileImage}
+                          alt={user.fullName}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-gray-900 font-medium text-sm">{user.fullName}</p>
+                        <p className="text-gray-600 text-xs">{user.email}</p>
+                      </div>
+                    </motion.div>
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 }}
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-red-200 hover:border-red-400 bg-red-50 hover:bg-red-100 transition-all group"
+                    >
+                      <LogOut className="w-5 h-5 text-red-600 group-hover:text-red-700" />
+                      <span className="text-red-700 group-hover:text-red-800 font-medium">Logout</span>
+                    </motion.button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={handleLinkClick}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-teal-400 transition-all group"
+                      >
+                        <LogIn className="w-5 h-5 text-gray-600 group-hover:text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">Login</span>
+                      </motion.div>
+                    </Link>
 
-                <Link href="/login-choice" onClick={handleLinkClick}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <UserPlus className="w-5 h-5" />
-                    <span className="font-semibold">Join us</span>
-                  </motion.div>
-                </Link>
+                    <Link href="/login-choice" onClick={handleLinkClick}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35 }}
+                        className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                      >
+                        <UserPlus className="w-5 h-5" />
+                        <span className="font-semibold">Join us</span>
+                      </motion.div>
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           </>
