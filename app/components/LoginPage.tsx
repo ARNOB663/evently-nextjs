@@ -155,8 +155,9 @@ export function LoginPage() {
                     cx="250"
                     cy="280"
                     rx="45"
-                    ry="50"
+                    ry={50}
                     fill="url(#bodyGradient)"
+                    initial={{ ry: 50 }}
                     animate={{
                       ry: [50, 52, 50],
                     }}
@@ -238,6 +239,7 @@ export function LoginPage() {
                     strokeWidth="14"
                     strokeLinecap="round"
                     fill="none"
+                    initial={{ d: "M210 280 Q200 290, 190 300 L180 310" }}
                     animate={{
                       d: [
                         "M210 280 Q200 290, 190 300 L180 310",
@@ -259,6 +261,7 @@ export function LoginPage() {
                     strokeWidth="14"
                     strokeLinecap="round"
                     fill="none"
+                    initial={{ d: "M290 280 Q300 290, 310 300 L320 310" }}
                     animate={{
                       d: [
                         "M290 280 Q300 290, 310 300 L320 310",

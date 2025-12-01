@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Upload to Cloudinary
+    console.log('📤 Starting image upload to Cloudinary...');
     const result = await uploadImage(file, folder);
+    console.log('✅ Image uploaded successfully:', result.secure_url);
 
     return NextResponse.json(
       {
@@ -55,10 +57,31 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Upload error:', error);
+    console.error('❌ Upload error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // Provide more specific error messages
+    let errorMessage = error.message || 'Failed to upload image';
+    let statusCode = 500;
+    
+    if (error.message?.includes('Cloudinary configuration') || error.message?.includes('missing')) {
+      errorMessage = error.message; // Show the actual error message for debugging
+      statusCode = 503; // Service Unavailable
+    } else if (error.message?.includes('authentication') || error.http_code === 401) {
+      errorMessage = 'Cloudinary authentication failed. Please check your API credentials.';
+      statusCode = 503;
+    } else if (error.message?.includes('Invalid image') || error.http_code === 400) {
+      errorMessage = error.message;
+      statusCode = 400;
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Failed to upload image' },
-      { status: 500 }
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
+      { status: statusCode }
     );
   }
 }

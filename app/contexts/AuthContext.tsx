@@ -9,9 +9,24 @@ interface User {
   fullName: string;
   role: 'user' | 'host' | 'admin';
   profileImage?: string;
+  coverImage?: string;
   bio?: string;
   interests: string[];
+  preferredEventTypes?: string[];
   location?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  occupation?: string;
+  company?: string;
+  website?: string;
+  socialMediaLinks?: {
+    instagram?: string;
+    twitter?: string;
+    facebook?: string;
+    linkedin?: string;
+    website?: string;
+  };
   averageRating?: number;
   totalReviews?: number;
 }

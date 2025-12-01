@@ -98,11 +98,12 @@ export function Navbar() {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="hidden md:flex items-center space-x-10"
           >
-            <button
+            <Link
+              href="/events"
               className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
             >
               Browse Events
-            </button>
+            </Link>
             <a
               href="#how-it-works"
               className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
@@ -110,16 +111,20 @@ export function Navbar() {
               Features
             </a>
             {isAuthenticated && user && (
-              <span className="text-gray-700">
+              <Link
+                href={user.role === 'host' || user.role === 'admin' ? '/dashboard' : '/'}
+                className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
+              >
                 {user.role === 'host' || user.role === 'admin' ? 'Host Dashboard' : 'View Events'}
-              </span>
+              </Link>
             )}
             {!isAuthenticated && (
-              <button
+              <Link
+                href="/host-login"
                 className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
               >
                 Host Dashboard
-              </button>
+              </Link>
             )}
           </motion.div>
 
@@ -132,19 +137,29 @@ export function Navbar() {
           >
             {isAuthenticated && user ? (
               <>
+                {/* Profile Link */}
+                <Link
+                  href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'}
+                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium flex items-center space-x-1"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Profile</span>
+                </Link>
                 {/* User Info */}
                 <div className="flex items-center space-x-3">
-                  {user.profileImage ? (
-                    <img
-                      src={user.profileImage}
-                      alt={user.fullName}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
-                  )}
+                  <Link href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'}>
+                    {user.profileImage ? (
+                      <img
+                        src={user.profileImage}
+                        alt={user.fullName}
+                        className="w-8 h-8 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-teal-500 transition-all"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-teal-500 transition-all">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </Link>
                   <span className="text-gray-700 font-medium text-sm">{user.fullName}</span>
                 </div>
                 {/* Logout Button */}
@@ -237,16 +252,17 @@ export function Navbar() {
                   </motion.div>
                 </Link>
 
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 }}
-                  onClick={handleLinkClick}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                >
-                  <Calendar className="w-5 h-5 text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Browse Events</span>
-                </motion.button>
+                <Link href="/events" onClick={handleLinkClick}>
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                  >
+                    <Calendar className="w-5 h-5 text-teal-600" />
+                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Browse Events</span>
+                  </motion.button>
+                </Link>
 
                 <motion.button
                   initial={{ opacity: 0, x: -20 }}
@@ -263,30 +279,51 @@ export function Navbar() {
                 </motion.button>
 
                 {isAuthenticated && user && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.25 }}
-                    onClick={handleLinkClick}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                  >
-                    <LayoutDashboard className="w-5 h-5 text-teal-600" />
-                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">
-                      {user.role === 'host' || user.role === 'admin' ? 'Host Dashboard' : 'View Events'}
-                    </span>
-                  </motion.div>
+                  <>
+                    <Link
+                      href={user.role === 'host' || user.role === 'admin' ? '/dashboard' : '/'}
+                      onClick={handleLinkClick}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                      >
+                        <LayoutDashboard className="w-5 h-5 text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">
+                          {user.role === 'host' || user.role === 'admin' ? 'Host Dashboard' : 'View Events'}
+                        </span>
+                      </motion.div>
+                    </Link>
+                    <Link
+                      href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'}
+                      onClick={handleLinkClick}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.27 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                      >
+                        <User className="w-5 h-5 text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">Profile</span>
+                      </motion.div>
+                    </Link>
+                  </>
                 )}
                 {!isAuthenticated && (
-                  <motion.button
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.25 }}
-                    onClick={handleLinkClick}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                  >
-                    <LayoutDashboard className="w-5 h-5 text-teal-600" />
-                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Host Dashboard</span>
-                  </motion.button>
+                  <Link href="/host-login" onClick={handleLinkClick}>
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.25 }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                    >
+                      <LayoutDashboard className="w-5 h-5 text-teal-600" />
+                      <span className="text-gray-700 group-hover:text-teal-600 font-medium">Host Dashboard</span>
+                    </motion.div>
+                  </Link>
                 )}
               </div>
 
@@ -299,28 +336,33 @@ export function Navbar() {
               <div className="p-6 space-y-3">
                 {isAuthenticated && user ? (
                   <>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200"
+                    <Link
+                      href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'}
+                      onClick={handleLinkClick}
                     >
-                      {user.profileImage ? (
-                        <img
-                          src={user.profileImage}
-                          alt={user.fullName}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center">
-                          <User className="w-5 h-5 text-white" />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 hover:border-teal-400 transition-all cursor-pointer"
+                      >
+                        {user.profileImage ? (
+                          <img
+                            src={user.profileImage}
+                            alt={user.fullName}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-gray-900 font-medium text-sm">{user.fullName}</p>
+                          <p className="text-gray-600 text-xs">{user.email}</p>
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <p className="text-gray-900 font-medium text-sm">{user.fullName}</p>
-                        <p className="text-gray-600 text-xs">{user.email}</p>
-                      </div>
-                    </motion.div>
+                      </motion.div>
+                    </Link>
                     <motion.button
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}

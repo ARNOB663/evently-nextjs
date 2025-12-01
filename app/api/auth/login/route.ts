@@ -52,12 +52,22 @@ export async function POST(req: NextRequest) {
       fullName: user.fullName,
       role: user.role,
       profileImage: user.profileImage,
+      coverImage: user.coverImage,
       bio: user.bio,
       interests: user.interests,
+      preferredEventTypes: user.preferredEventTypes,
       location: user.location,
+      phoneNumber: user.phoneNumber,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      occupation: user.occupation,
+      company: user.company,
+      website: user.website,
+      socialMediaLinks: user.socialMediaLinks,
       averageRating: user.averageRating,
       totalReviews: user.totalReviews,
       createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
 
     return NextResponse.json(

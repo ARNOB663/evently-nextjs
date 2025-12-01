@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Event from '@/lib/models/Event';
 import { authenticateRequest, requireAuth } from '@/lib/middleware/auth';
+import mongoose from 'mongoose';
 
 // GET /api/events - Get all events with filters
 export async function GET(req: NextRequest) {
@@ -14,6 +15,7 @@ export async function GET(req: NextRequest) {
     const date = searchParams.get('date');
     const status = searchParams.get('status');
     const search = searchParams.get('search');
+    const hostId = searchParams.get('hostId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
@@ -24,6 +26,9 @@ export async function GET(req: NextRequest) {
     if (eventType) query.eventType = eventType;
     if (location) query.location = { $regex: location, $options: 'i' };
     if (status) query.status = status;
+    if (hostId && mongoose.Types.ObjectId.isValid(hostId)) {
+      query.hostId = new mongoose.Types.ObjectId(hostId);
+    }
     
     if (date) {
       const dateObj = new Date(date);

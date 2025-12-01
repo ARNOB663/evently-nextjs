@@ -22,7 +22,16 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ user }, { status: 200 });
+    // Convert to plain object to ensure all fields are included
+    const userObject = user.toObject();
+    // Ensure coverImage field exists (default to empty string if undefined)
+    if (userObject.coverImage === undefined) {
+      userObject.coverImage = '';
+    }
+    console.log('📥 GET user coverImage:', userObject.coverImage);
+    console.log('📥 GET user profileImage:', userObject.profileImage);
+
+    return NextResponse.json({ user: userObject }, { status: 200 });
   } catch (error: any) {
     console.error('Get user error:', error);
     return NextResponse.json(
@@ -59,7 +68,25 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { fullName, bio, interests, location, profileImage } = body;
+    const { 
+      fullName, 
+      bio, 
+      interests, 
+      location, 
+      profileImage, 
+      coverImage,
+      phoneNumber,
+      dateOfBirth,
+      gender,
+      occupation,
+      company,
+      website,
+      preferredEventTypes,
+      socialMediaLinks 
+    } = body;
+
+    console.log('📝 Received update data:', { coverImage, profileImage });
+    console.log('📝 Full body:', body);
 
     // Build update object
     const updateData: any = {};
@@ -67,7 +94,25 @@ export async function PUT(
     if (bio !== undefined) updateData.bio = bio;
     if (interests) updateData.interests = interests;
     if (location !== undefined) updateData.location = location;
-    if (profileImage) updateData.profileImage = profileImage;
+    // Always update images if they're provided (even if empty string)
+    if (profileImage !== undefined) updateData.profileImage = profileImage || '';
+    // Explicitly handle coverImage - always save it if it's in the request
+    if (coverImage !== undefined) {
+      updateData.coverImage = coverImage || '';
+      console.log('✅ Setting coverImage to:', updateData.coverImage);
+    } else {
+      console.log('⚠️ coverImage is undefined in request body');
+    }
+    if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+    if (gender !== undefined) updateData.gender = gender;
+    if (occupation !== undefined) updateData.occupation = occupation;
+    if (company !== undefined) updateData.company = company;
+    if (website !== undefined) updateData.website = website;
+    if (preferredEventTypes) updateData.preferredEventTypes = preferredEventTypes;
+    if (socialMediaLinks) updateData.socialMediaLinks = socialMediaLinks;
+
+    console.log('💾 Update data being saved:', updateData);
 
     const updatedUser = await User.findByIdAndUpdate(
       id,
@@ -82,8 +127,19 @@ export async function PUT(
       );
     }
 
+    console.log('✅ Updated user coverImage:', updatedUser.coverImage);
+    console.log('✅ Updated user profileImage:', updatedUser.profileImage);
+
+    // Convert to plain object to ensure all fields are included
+    const userObject = updatedUser.toObject();
+    // Ensure coverImage field exists (default to empty string if undefined)
+    if (userObject.coverImage === undefined) {
+      userObject.coverImage = '';
+    }
+    console.log('✅ User object coverImage:', userObject.coverImage);
+
     return NextResponse.json(
-      { message: 'Profile updated successfully', user: updatedUser },
+      { message: 'Profile updated successfully', user: userObject },
       { status: 200 }
     );
   } catch (error: any) {

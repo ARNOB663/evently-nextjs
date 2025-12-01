@@ -38,11 +38,33 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hashPassword(password);
 
     // Create user
+    const sanitizedRole = role === 'admin' ? 'user' : role;
+    const socialDefaults = {
+      instagram: '',
+      twitter: '',
+      facebook: '',
+      linkedin: '',
+      website: '',
+    };
+
     const user = await User.create({
       email: email.toLowerCase(),
       password: hashedPassword,
       fullName,
-      role: role === 'admin' ? 'user' : role, // Prevent admin creation via API
+      role: sanitizedRole,
+      profileImage: '',
+      coverImage: '',
+      bio: '',
+      interests: [],
+      preferredEventTypes: [],
+      location: '',
+      phoneNumber: '',
+      dateOfBirth: '',
+      gender: '',
+      occupation: '',
+      company: '',
+      website: '',
+      socialMediaLinks: socialDefaults,
     });
 
     // Generate token
@@ -59,10 +81,22 @@ export async function POST(req: NextRequest) {
       fullName: user.fullName,
       role: user.role,
       profileImage: user.profileImage,
+      coverImage: user.coverImage,
       bio: user.bio,
       interests: user.interests,
+      preferredEventTypes: user.preferredEventTypes,
       location: user.location,
+      phoneNumber: user.phoneNumber,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      occupation: user.occupation,
+      company: user.company,
+      website: user.website,
+      socialMediaLinks: user.socialMediaLinks,
       createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      averageRating: user.averageRating,
+      totalReviews: user.totalReviews,
     };
 
     return NextResponse.json(

@@ -5,9 +5,24 @@ export interface IUser extends Document {
   password: string;
   fullName: string;
   profileImage?: string;
+  coverImage?: string;
   bio?: string;
   interests: string[];
+  preferredEventTypes?: string[]; // For users - what kind of events they like
   location?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  occupation?: string;
+  company?: string;
+  website?: string;
+  socialMediaLinks?: {
+    instagram?: string;
+    twitter?: string;
+    facebook?: string;
+    linkedin?: string;
+    website?: string;
+  };
   role: 'user' | 'host' | 'admin';
   createdAt: Date;
   updatedAt: Date;
@@ -41,6 +56,10 @@ const UserSchema: Schema = new Schema(
       type: String,
       default: '',
     },
+    coverImage: {
+      type: String,
+      default: '',
+    },
     bio: {
       type: String,
       default: '',
@@ -50,9 +69,44 @@ const UserSchema: Schema = new Schema(
       type: [String],
       default: [],
     },
+    preferredEventTypes: {
+      type: [String],
+      default: [],
+    },
     location: {
       type: String,
       default: '',
+    },
+    phoneNumber: {
+      type: String,
+      default: '',
+    },
+    dateOfBirth: {
+      type: String,
+      default: '',
+    },
+    gender: {
+      type: String,
+      default: '',
+    },
+    occupation: {
+      type: String,
+      default: '',
+    },
+    company: {
+      type: String,
+      default: '',
+    },
+    website: {
+      type: String,
+      default: '',
+    },
+    socialMediaLinks: {
+      instagram: { type: String, default: '' },
+      twitter: { type: String, default: '' },
+      facebook: { type: String, default: '' },
+      linkedin: { type: String, default: '' },
+      website: { type: String, default: '' },
     },
     role: {
       type: String,
