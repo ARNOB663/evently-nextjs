@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Search, Users, MapPin, Filter, X, UserPlus, Sparkles, TrendingUp } from 'lucide-react';
+import { Search, Users, MapPin, Filter, X, UserPlus, Sparkles, TrendingUp, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -12,7 +12,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { FriendRequestButton } from '../components/FriendRequestButton';
 import Link from 'next/link';
 
-interface User {
+interface DiscoverUser {
   _id: string;
   fullName: string;
   profileImage?: string;
@@ -26,8 +26,8 @@ interface User {
 export default function DiscoverPage() {
   const { user, token } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
-  const [recommendations, setRecommendations] = useState<User[]>([]);
+  const [users, setUsers] = useState<DiscoverUser[]>([]);
+  const [recommendations, setRecommendations] = useState<DiscoverUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'search' | 'recommendations'>('recommendations');
@@ -229,7 +229,7 @@ export default function DiscoverPage() {
                           />
                         ) : (
                           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center border-4 border-white shadow-lg hover:ring-4 hover:ring-teal-500 transition-all cursor-pointer">
-                            <User className="w-12 h-12 text-white" />
+                            <UserIcon className="w-12 h-12 text-white" />
                           </div>
                         )}
                       </Link>
