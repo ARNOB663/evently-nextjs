@@ -484,17 +484,17 @@ export function EditUserProfile() {
                         profileInputRef.current?.click();
                       }
                     }}
-                    className="flex items-center gap-2 text-gray-900 border-gray-300 hover:bg-gray-50 font-medium"
+                    className="flex items-center gap-2 bg-white text-gray-900 border-2 border-gray-400 hover:bg-teal-50 hover:border-teal-500 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     {uploadingProfile ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-gray-900" />
-                        <span className="text-gray-900">Uploading...</span>
+                        <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+                        <span className="text-teal-600">Uploading...</span>
                       </>
                     ) : (
                       <>
-                        <Camera className="w-4 h-4 text-gray-900" />
-                        <span className="text-gray-900">Change Photo</span>
+                        <Camera className="w-4 h-4 text-teal-600" />
+                        <span className="text-teal-600">Change Photo</span>
                       </>
                     )}
                   </Button>

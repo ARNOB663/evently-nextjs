@@ -1,10 +1,11 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User } from 'lucide-react';
+import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
+import { Notifications } from './Notifications';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -137,6 +138,32 @@ export function Navbar() {
           >
             {isAuthenticated && user ? (
               <>
+                {/* Notifications */}
+                <Notifications />
+                {/* Discover Link */}
+                <Link
+                  href="/discover"
+                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium flex items-center space-x-1"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Discover</span>
+                </Link>
+                {/* Messages Link */}
+                <Link
+                  href="/messages"
+                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium flex items-center space-x-1 relative"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Messages</span>
+                </Link>
+                {/* Friend Requests Link */}
+                <Link
+                  href="/friend-requests"
+                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium flex items-center space-x-1 relative"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Requests</span>
+                </Link>
                 {/* Profile Link */}
                 <Link
                   href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'}

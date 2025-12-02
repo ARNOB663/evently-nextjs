@@ -1,12 +1,12 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { HostProfile } from '../components/HostProfile';
+import { EnhancedHostProfile } from '../components/EnhancedHostProfile';
 
 export default function HostProfilePage() {
   return (
     <>
       <Navbar />
-      <HostProfile />
+      <EnhancedHostProfile />
       <Footer />
     </>
   );

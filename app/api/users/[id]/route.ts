@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/lib/models/User';
+import FriendRequest from '@/lib/models/FriendRequest';
 import { authenticateRequest } from '@/lib/middleware/auth';
 
 export async function GET(
@@ -31,7 +32,54 @@ export async function GET(
     console.log('📥 GET user coverImage:', userObject.coverImage);
     console.log('📥 GET user profileImage:', userObject.profileImage);
 
-    return NextResponse.json({ user: userObject }, { status: 200 });
+    // Get friend status if authenticated user is viewing another user's profile
+    let friendStatus = null;
+    try {
+      const authHeader = req.headers.get('authorization');
+      const token = authHeader?.startsWith('Bearer ') 
+        ? authHeader.substring(7) 
+        : authHeader;
+      
+      if (token) {
+        const { user: authUser } = await authenticateRequest(req);
+        if (authUser && authUser.userId !== userId) {
+          const currentUser = await User.findById(authUser.userId);
+          if (currentUser) {
+            const isFriend = currentUser.friends.includes(userId);
+            const isBlocked = currentUser.blockedUsers.includes(userId) || user.blockedUsers.includes(authUser.userId);
+            
+            if (isBlocked) {
+              friendStatus = { status: 'blocked' };
+            } else if (isFriend) {
+              friendStatus = { status: 'friends' };
+            } else {
+              const sentRequest = await FriendRequest.findOne({
+                from: authUser.userId,
+                to: userId,
+                status: 'pending',
+              });
+              const receivedRequest = await FriendRequest.findOne({
+                from: userId,
+                to: authUser.userId,
+                status: 'pending',
+              });
+              
+              if (sentRequest) {
+                friendStatus = { status: 'request_sent', requestId: sentRequest._id };
+              } else if (receivedRequest) {
+                friendStatus = { status: 'request_received', requestId: receivedRequest._id };
+              } else {
+                friendStatus = { status: 'none' };
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      // Ignore auth errors for public profile viewing
+    }
+
+    return NextResponse.json({ user: userObject, friendStatus }, { status: 200 });
   } catch (error: any) {
     console.error('Get user error:', error);
     return NextResponse.json(

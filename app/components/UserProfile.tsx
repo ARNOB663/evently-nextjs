@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Edit,
   Phone,
@@ -20,6 +20,8 @@ import {
   Briefcase,
   Building2,
   Sparkles,
+  X,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
@@ -59,6 +61,17 @@ export function UserProfile() {
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; imageUrl: string; alt: string }>({
+    isOpen: false,
+    imageUrl: '',
+    alt: '',
+  });
+  const [mutualFriends, setMutualFriends] = useState<any[]>([]);
+  const [mutualEvents, setMutualEvents] = useState<any[]>([]);
+  const [userEvents, setUserEvents] = useState<any[]>([]);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [friendsCount, setFriendsCount] = useState(0);
+  const [friendsLoading, setFriendsLoading] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData>({
     fullName: '',
     bio: '',
@@ -136,8 +149,61 @@ export function UserProfile() {
   useEffect(() => {
     if (user && token) {
       fetchProfile();
+      fetchMutualConnections();
+      fetchUserEvents();
+      fetchFriends();
+      recordProfileVisit();
     }
   }, [user, token, fetchProfile]);
+
+  const fetchMutualConnections = async () => {
+    // Mutual connections are only relevant when viewing someone else's profile
+    // For own profile, we'll skip this
+    return;
+  };
+
+  const fetchUserEvents = async () => {
+    if (!user || !token || !user._id) return;
+    try {
+      const response = await fetch(`/api/users/${user._id}/events?type=all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserEvents(data.events || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user events:', error);
+    }
+  };
+
+  const fetchFriends = async () => {
+    if (!user || !token || !user._id) return;
+    setFriendsLoading(true);
+    try {
+      const response = await fetch(`/api/users/${user._id}/friends`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFriends(data.friends || []);
+        setFriendsCount(data.totalCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const recordProfileVisit = async () => {
+    // Don't record visit for own profile
+    return;
+  };
 
   // Refetch when navigating back to profile page
   useEffect(() => {
@@ -157,6 +223,27 @@ export function UserProfile() {
       }
     }
   }, [user, token, fetchProfile]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && imageModal.isOpen) {
+        setImageModal({ isOpen: false, imageUrl: '', alt: '' });
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [imageModal.isOpen]);
+
+  const openImageModal = (imageUrl: string, alt: string) => {
+    if (imageUrl && imageUrl.trim() !== '') {
+      setImageModal({ isOpen: true, imageUrl, alt });
+    }
+  };
+
+  const closeImageModal = () => {
+    setImageModal({ isOpen: false, imageUrl: '', alt: '' });
+  };
 
   if (authLoading || loading) {
     return (
@@ -187,13 +274,29 @@ export function UserProfile() {
           transition={{ duration: 0.5 }}
           className="relative mb-6 rounded-2xl overflow-hidden shadow-xl"
         >
-          <div className="relative h-48 sm:h-64 md:h-80 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 overflow-hidden">
+          <div 
+            className="relative h-48 sm:h-64 md:h-80 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 overflow-hidden cursor-pointer group"
+            onClick={() => openImageModal(profileData.coverImage, 'Cover image')}
+          >
             {profileData.coverImage && profileData.coverImage.trim() !== '' ? (
-              <ImageWithFallback
-                src={profileData.coverImage}
-                alt="Cover"
-                className="w-full h-full object-cover absolute inset-0 z-0"
-              />
+              <>
+                <ImageWithFallback
+                  src={profileData.coverImage}
+                  alt="Cover"
+                  className="w-full h-full object-cover absolute inset-0 z-0 transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 z-10 flex items-center justify-center">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ opacity: 1, scale: 1 }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  >
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                      <User className="w-6 h-6 text-teal-600" />
+                    </div>
+                  </motion.div>
+                </div>
+              </>
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 via-cyan-500/20 to-blue-500/20 z-10" />
           </div>
@@ -206,13 +309,29 @@ export function UserProfile() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="relative inline-block"
             >
-              <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border-4 border-white bg-white shadow-2xl overflow-hidden ring-4 ring-teal-100">
+              <div 
+                className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border-4 border-white bg-white shadow-2xl overflow-hidden ring-4 ring-teal-100 cursor-pointer group"
+                onClick={() => openImageModal(profileData.profileImage, `${profileData.fullName}'s profile picture`)}
+              >
                 {profileData.profileImage ? (
-                  <ImageWithFallback
-                    src={profileData.profileImage}
-                    alt={profileData.fullName}
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <ImageWithFallback
+                      src={profileData.profileImage}
+                      alt={profileData.fullName}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileHover={{ opacity: 1, scale: 1 }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      >
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                          <User className="w-5 h-5 text-teal-600" />
+                        </div>
+                      </motion.div>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center">
                     <User className="w-16 h-16 sm:w-20 sm:h-20 text-white" />
@@ -433,10 +552,69 @@ export function UserProfile() {
                 </Card>
               </motion.div>
             )}
+
+            {/* User Events */}
+            {userEvents.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+              >
+                <Card className="p-6 sm:p-8 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-teal-600" />
+                    Events
+                  </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Upcoming Events</h3>
+                      <div className="space-y-2">
+                        {userEvents
+                          .filter((e: any) => new Date(e.date) >= new Date())
+                          .slice(0, 3)
+                          .map((event: any) => (
+                            <Link
+                              key={event._id}
+                              href={`/events/${event._id}`}
+                              className="block p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                            >
+                              <p className="text-sm font-medium text-gray-900 group-hover:text-teal-600">
+                                {event.eventName}
+                              </p>
+                              <p className="text-xs text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                            </Link>
+                          ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Past Events</h3>
+                      <div className="space-y-2">
+                        {userEvents
+                          .filter((e: any) => new Date(e.date) < new Date())
+                          .slice(0, 3)
+                          .map((event: any) => (
+                            <Link
+                              key={event._id}
+                              href={`/events/${event._id}`}
+                              className="block p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                            >
+                              <p className="text-sm font-medium text-gray-900 group-hover:text-teal-600">
+                                {event.eventName}
+                              </p>
+                              <p className="text-xs text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                            </Link>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
           </div>
 
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
+
             {/* Interests */}
             {profileData.interests.length > 0 && (
               <motion.div
@@ -456,9 +634,117 @@ export function UserProfile() {
                 </Card>
               </motion.div>
             )}
+
+            {/* Friends */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              <Card className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-teal-600" />
+                    Friends {friendsCount > 0 && `(${friendsCount})`}
+                  </h3>
+                  {friendsCount > 6 && (
+                    <Link
+                      href={`/friends?userId=${user?._id}`}
+                      className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                    >
+                      View All
+                    </Link>
+                  )}
+                </div>
+                {friendsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+                  </div>
+                ) : friends.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {friends.slice(0, 6).map((friend: any) => (
+                        <Link
+                          key={friend._id}
+                          href={`/profile?userId=${friend._id}`}
+                          className="group flex flex-col items-center"
+                        >
+                          {friend.profileImage ? (
+                            <ImageWithFallback
+                              src={friend.profileImage}
+                              alt={friend.fullName}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-white group-hover:border-teal-500 transition-all mb-2"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center border-2 border-white group-hover:border-teal-500 transition-all mb-2">
+                              <User className="w-8 h-8 text-teal-600" />
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-700 text-center group-hover:text-teal-600 transition-colors truncate w-full">
+                            {friend.fullName}
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                    {friendsCount > 6 && (
+                      <div className="text-center pt-2 border-t border-gray-100">
+                        <Link
+                          href={`/friends?userId=${user?._id}`}
+                          className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                        >
+                          View All {friendsCount} Friends
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm">No friends yet</p>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      <AnimatePresence>
+        {imageModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+            onClick={closeImageModal}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeImageModal}
+                className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-3 transition-all duration-200 group"
+                aria-label="Close image"
+              >
+                <X className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+              </button>
+              <div className="relative w-full h-full flex items-center justify-center">
+                <ImageWithFallback
+                  src={imageModal.imageUrl}
+                  alt={imageModal.alt}
+                  className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -28,6 +28,22 @@ export interface IUser extends Document {
   updatedAt: Date;
   averageRating?: number;
   totalReviews?: number;
+  // Friend System
+  friends: mongoose.Types.ObjectId[];
+  friendRequestsSent: mongoose.Types.ObjectId[];
+  friendRequestsReceived: mongoose.Types.ObjectId[];
+  blockedUsers: mongoose.Types.ObjectId[];
+  // Privacy Settings
+  privacySettings?: {
+    profileVisibility: 'everyone' | 'friends' | 'only me';
+    friendRequests: 'everyone' | 'friends of friends' | 'no one';
+    showFriendList: boolean;
+    showProfileVisits: boolean;
+    showOnlineStatus: boolean;
+  };
+  // Online Status
+  lastSeen?: Date;
+  isOnline?: boolean;
 }
 
 const UserSchema: Schema = new Schema(
@@ -122,6 +138,65 @@ const UserSchema: Schema = new Schema(
     totalReviews: {
       type: Number,
       default: 0,
+    },
+    // Friend System
+    friends: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    friendRequestsSent: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    friendRequestsReceived: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    blockedUsers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    // Privacy Settings
+    privacySettings: {
+      profileVisibility: {
+        type: String,
+        enum: ['everyone', 'friends', 'only me'],
+        default: 'everyone',
+      },
+      friendRequests: {
+        type: String,
+        enum: ['everyone', 'friends of friends', 'no one'],
+        default: 'everyone',
+      },
+      showFriendList: {
+        type: Boolean,
+        default: true,
+      },
+      showProfileVisits: {
+        type: Boolean,
+        default: true,
+      },
+      showOnlineStatus: {
+        type: Boolean,
+        default: true,
+      },
+    },
+    // Online Status
+    lastSeen: {
+      type: Date,
+      default: Date.now,
+    },
+    isOnline: {
+      type: Boolean,
+      default: false,
     },
   },
   {

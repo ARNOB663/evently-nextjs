@@ -1,12 +1,12 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
-import { UserProfile } from '../components/UserProfile';
+import { EnhancedUserProfile } from '../components/EnhancedUserProfile';
 
 export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <UserProfile />
+      <EnhancedUserProfile />
       <Footer />
     </>
   );

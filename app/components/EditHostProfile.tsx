@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -79,6 +79,7 @@ const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
 export function EditHostProfile() {
   const { user, token, loading: authLoading } = useAuth();
+  const profileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -406,17 +407,28 @@ export function EditHostProfile() {
             <div>
               <Label className="text-sm font-semibold text-gray-900 mb-3 block">Profile Picture</Label>
               <div className="flex items-center gap-6">
-                <label className="relative w-32 h-32 rounded-full border-4 border-white bg-white shadow-lg overflow-hidden ring-4 ring-purple-100 cursor-pointer group">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file, 'profile');
-                    }}
-                    disabled={uploadingProfile}
-                  />
+                {/* Hidden input shared by avatar and button */}
+                <input
+                  ref={profileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file, 'profile');
+                  }}
+                  disabled={uploadingProfile}
+                />
+
+                {/* Clickable avatar */}
+                <div
+                  className="relative w-32 h-32 rounded-full border-4 border-white bg-white shadow-lg overflow-hidden ring-4 ring-purple-100 cursor-pointer group"
+                  onClick={() => {
+                    if (!uploadingProfile) {
+                      profileInputRef.current?.click();
+                    }
+                  }}
+                >
                   {profileData.profileImage ? (
                     <>
                       <ImageWithFallback
@@ -441,38 +453,33 @@ export function EditHostProfile() {
                       )}
                     </div>
                   )}
-                </label>
+                </div>
+
+                {/* Change photo button */}
                 <div className="flex flex-col gap-2">
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file, 'profile');
-                      }}
-                      disabled={uploadingProfile}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={uploadingProfile}
-                      className="flex items-center gap-2 text-gray-900 border-gray-300 hover:bg-gray-50 font-medium"
-                    >
-                      {uploadingProfile ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-gray-900" />
-                          <span className="text-gray-900">Uploading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="w-4 h-4 text-gray-900" />
-                          <span className="text-gray-900">Change Photo</span>
-                        </>
-                      )}
-                    </Button>
-                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploadingProfile}
+                    onClick={() => {
+                      if (!uploadingProfile) {
+                        profileInputRef.current?.click();
+                      }
+                    }}
+                    className="flex items-center gap-2 bg-white text-gray-900 border-2 border-gray-400 hover:bg-purple-50 hover:border-purple-500 font-semibold shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    {uploadingProfile ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                        <span className="text-purple-600">Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-4 h-4 text-purple-600" />
+                        <span className="text-purple-600">Change Photo</span>
+                      </>
+                    )}
+                  </Button>
                   <p className="text-xs text-gray-600 font-medium">Click photo or button to upload</p>
                 </div>
               </div>

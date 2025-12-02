@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Edit,
   Phone,
@@ -18,6 +18,7 @@ import {
   Calendar,
   Briefcase,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
@@ -56,6 +57,11 @@ export function HostProfile() {
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; imageUrl: string; alt: string }>({
+    isOpen: false,
+    imageUrl: '',
+    alt: '',
+  });
   const [profileData, setProfileData] = useState<HostProfileData>({
     fullName: '',
     bio: '',
@@ -155,6 +161,27 @@ export function HostProfile() {
     }
   }, [user, token, fetchProfile]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && imageModal.isOpen) {
+        setImageModal({ isOpen: false, imageUrl: '', alt: '' });
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [imageModal.isOpen]);
+
+  const openImageModal = (imageUrl: string, alt: string) => {
+    if (imageUrl && imageUrl.trim() !== '') {
+      setImageModal({ isOpen: true, imageUrl, alt });
+    }
+  };
+
+  const closeImageModal = () => {
+    setImageModal({ isOpen: false, imageUrl: '', alt: '' });
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -184,13 +211,29 @@ export function HostProfile() {
           transition={{ duration: 0.5 }}
           className="relative mb-6 rounded-2xl overflow-hidden shadow-xl"
         >
-          <div className="relative h-48 sm:h-64 md:h-80 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 overflow-hidden">
+          <div 
+            className="relative h-48 sm:h-64 md:h-80 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 overflow-hidden cursor-pointer group"
+            onClick={() => openImageModal(profileData.coverImage, 'Cover image')}
+          >
             {profileData.coverImage && profileData.coverImage.trim() !== '' ? (
-              <ImageWithFallback
-                src={profileData.coverImage}
-                alt="Cover"
-                className="w-full h-full object-cover absolute inset-0 z-0"
-              />
+              <>
+                <ImageWithFallback
+                  src={profileData.coverImage}
+                  alt="Cover"
+                  className="w-full h-full object-cover absolute inset-0 z-0 transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 z-10 flex items-center justify-center">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ opacity: 1, scale: 1 }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  >
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                      <Building2 className="w-6 h-6 text-purple-600" />
+                    </div>
+                  </motion.div>
+                </div>
+              </>
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-rose-500/20 z-10" />
           </div>
@@ -203,13 +246,29 @@ export function HostProfile() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="relative inline-block"
             >
-              <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border-4 border-white bg-white shadow-2xl overflow-hidden ring-4 ring-purple-100">
+              <div 
+                className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border-4 border-white bg-white shadow-2xl overflow-hidden ring-4 ring-purple-100 cursor-pointer group"
+                onClick={() => openImageModal(profileData.profileImage, `${profileData.fullName}'s profile picture`)}
+              >
                 {profileData.profileImage ? (
-                  <ImageWithFallback
-                    src={profileData.profileImage}
-                    alt={profileData.fullName}
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <ImageWithFallback
+                      src={profileData.profileImage}
+                      alt={profileData.fullName}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileHover={{ opacity: 1, scale: 1 }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      >
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                          <Building2 className="w-5 h-5 text-purple-600" />
+                        </div>
+                      </motion.div>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
                     <Building2 className="w-16 h-16 sm:w-20 sm:h-20 text-white" />
@@ -429,6 +488,43 @@ export function HostProfile() {
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      <AnimatePresence>
+        {imageModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+            onClick={closeImageModal}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeImageModal}
+                className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-3 transition-all duration-200 group"
+                aria-label="Close image"
+              >
+                <X className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+              </button>
+              <div className="relative w-full h-full flex items-center justify-center">
+                <ImageWithFallback
+                  src={imageModal.imageUrl}
+                  alt={imageModal.alt}
+                  className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
