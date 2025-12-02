@@ -111,8 +111,6 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (token) {
-      // Ensure socket server is initialized
-      fetch('/api/socketio');
       fetchConversations();
 
       // If we were deep-linked with a userId, preselect that conversation
