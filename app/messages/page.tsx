@@ -58,6 +58,7 @@ export default function MessagesPage() {
   const socketRef = useRef<Socket | null>(null);
   const [typingUserId, setTypingUserId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const selectedConversationRef = useRef<string | null>(null);
 
   // Initialize socket connection
   useEffect(() => {
@@ -75,8 +76,9 @@ export default function MessagesPage() {
     });
 
     socket.on('message:new', (payload: { _id: string; senderId: string; receiverId: string; content: string; createdAt: string }) => {
+      const currentSelected = selectedConversationRef.current;
       // Update messages in real-time if this conversation is open
-      if (selectedConversation && (payload.senderId === selectedConversation || payload.receiverId === selectedConversation)) {
+      if (currentSelected && (payload.senderId === currentSelected || payload.receiverId === currentSelected)) {
         setMessages((prev) => [
           ...prev,
           {
@@ -94,8 +96,9 @@ export default function MessagesPage() {
     });
 
     socket.on('typing', (payload: { userId: string; isTyping: boolean }) => {
-      if (!selectedConversation) return;
-      if (payload.userId === selectedConversation) {
+      const currentSelected = selectedConversationRef.current;
+      if (!currentSelected) return;
+      if (payload.userId === currentSelected) {
         setTypingUserId(payload.isTyping ? payload.userId : null);
       }
     });
@@ -104,7 +107,7 @@ export default function MessagesPage() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [token, selectedConversation, user?._id]);
+  }, [token, user?._id]);
 
   useEffect(() => {
     if (token) {
@@ -115,6 +118,7 @@ export default function MessagesPage() {
       // If we were deep-linked with a userId, preselect that conversation
       if (initialUserId) {
         setSelectedConversation(initialUserId);
+        selectedConversationRef.current = initialUserId;
       }
     }
   }, [token, initialUserId]);
@@ -125,6 +129,10 @@ export default function MessagesPage() {
       socketRef.current?.emit('conversation:join', { userId: selectedConversation });
     }
   }, [selectedConversation, token]);
+  const handleSelectConversation = (id: string) => {
+    selectedConversationRef.current = id;
+    setSelectedConversation(id);
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -269,7 +277,7 @@ export default function MessagesPage() {
                     filteredConversations.map((conv) => (
                       <button
                         key={conv.userId}
-                        onClick={() => setSelectedConversation(conv.userId)}
+                        onClick={() => handleSelectConversation(conv.userId)}
                         className={`
                           w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left
                           ${selectedConversation === conv.userId ? 'bg-teal-50 border-l-4 border-l-teal-600' : ''}
