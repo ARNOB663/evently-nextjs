@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import './User';
 
 export interface IEvent extends Document {
   hostId: mongoose.Types.ObjectId;

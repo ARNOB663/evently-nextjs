@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectDB from '@/lib/db';
 import Message from '@/lib/models/Message';
 import { requireAuth } from '@/lib/middleware/auth';
@@ -14,11 +15,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error || 'Authentication required' }, { status: 401 });
     }
 
+    const currentUserId = new mongoose.Types.ObjectId(user.userId);
+
     // Get all unique conversation partners
     const conversations = await Message.aggregate([
       {
         $match: {
-          $or: [{ sender: user.userId }, { receiver: user.userId }],
+          $or: [{ sender: currentUserId }, { receiver: currentUserId }],
         },
       },
       {
@@ -28,7 +31,7 @@ export async function GET(req: NextRequest) {
         $group: {
           _id: {
             $cond: [
-              { $eq: ['$sender', user.userId] },
+              { $eq: ['$sender', currentUserId] },
               '$receiver',
               '$sender',
             ],
@@ -39,7 +42,7 @@ export async function GET(req: NextRequest) {
               $cond: [
                 {
                   $and: [
-                    { $eq: ['$receiver', user.userId] },
+                    { $eq: ['$receiver', currentUserId] },
                     { $eq: ['$isRead', false] },
                   ],
                 },

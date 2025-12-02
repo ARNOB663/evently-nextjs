@@ -15,7 +15,7 @@ export default function FriendsPage() {
   const { user, token } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId') || user?._id;
+  const userId = (searchParams?.get('userId') as string | null) || user?._id || '';
   const [friends, setFriends] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
