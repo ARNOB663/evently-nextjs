@@ -6,7 +6,7 @@ import Payment from '@/lib/models/Payment';
 import { requireAuth } from '@/lib/middleware/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-11-17.clover',
 });
 
 // POST /api/payments/checkout - Create Stripe checkout session

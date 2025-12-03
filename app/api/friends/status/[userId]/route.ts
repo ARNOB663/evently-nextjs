@@ -32,7 +32,13 @@ export async function GET(
     }
 
     // Check if blocked
-    const isBlocked = currentUser.blockedUsers.includes(userId) || targetUser.blockedUsers.includes(user.userId);
+    const isBlockedByCurrent = currentUser.blockedUsers.some(
+      (blockedId) => blockedId.toString() === userId
+    );
+    const isBlockedByTarget = targetUser.blockedUsers.some(
+      (blockedId) => blockedId.toString() === user.userId
+    );
+    const isBlocked = isBlockedByCurrent || isBlockedByTarget;
 
     if (isBlocked) {
       return NextResponse.json({
@@ -42,7 +48,9 @@ export async function GET(
     }
 
     // Check if friends
-    const isFriend = currentUser.friends.includes(userId);
+    const isFriend = currentUser.friends.some(
+      (friendId) => friendId.toString() === userId
+    );
 
     if (isFriend) {
       return NextResponse.json({

@@ -39,12 +39,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if already friends
-    if (currentUser.friends.includes(userId)) {
+    if (currentUser.friends.some((friendId) => friendId.toString() === userId)) {
       return NextResponse.json({ error: 'Already friends' }, { status: 400 });
     }
 
     // Check if blocked
-    if (currentUser.blockedUsers.includes(userId) || targetUser.blockedUsers.includes(user.userId)) {
+    const isBlockedByCurrent = currentUser.blockedUsers.some(
+      (blockedId) => blockedId.toString() === userId
+    );
+    const isBlockedByTarget = targetUser.blockedUsers.some(
+      (blockedId) => blockedId.toString() === user.userId
+    );
+
+    if (isBlockedByCurrent || isBlockedByTarget) {
       return NextResponse.json({ error: 'Cannot send friend request' }, { status: 403 });
     }
 

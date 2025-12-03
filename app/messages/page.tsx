@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Search, MoreVertical, User, Loader2, MessageSquare, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,10 +42,10 @@ interface Message {
   createdAt: string;
 }
 
-export default function MessagesPage() {
+function MessagesPageInner() {
   const { user, token } = useAuth();
   const searchParams = useSearchParams();
-  const initialUserId = searchParams.get('userId');
+  const initialUserId = searchParams?.get('userId') || undefined;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -461,6 +461,14 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-24" />}>
+      <MessagesPageInner />
+    </Suspense>
   );
 }
 

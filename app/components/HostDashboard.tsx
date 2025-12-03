@@ -35,6 +35,13 @@ import {
 } from './ui/dialog';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import dynamic from 'next/dynamic';
+
+// Dynamically import LocationPicker to avoid SSR issues with Leaflet
+const LocationPicker = dynamic(() => import('./LocationPicker').then(mod => ({ default: mod.LocationPicker })), {
+  ssr: false,
+  loading: () => <div className="w-full h-[350px] bg-gray-100 rounded-lg flex items-center justify-center">Loading map...</div>
+});
 
 interface Event {
   _id: string;
@@ -44,6 +51,8 @@ interface Event {
   date: string;
   time: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   minParticipants: number;
   maxParticipants: number;
   currentParticipants: number;
@@ -61,6 +70,8 @@ interface EventFormData {
   date: string;
   time: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   minParticipants: string;
   maxParticipants: string;
   joiningFee: string;
@@ -99,6 +110,8 @@ export function HostDashboard() {
     date: '',
     time: '',
     location: '',
+    latitude: undefined,
+    longitude: undefined,
     minParticipants: '1',
     maxParticipants: '10',
     joiningFee: '0',
@@ -332,6 +345,8 @@ export function HostDashboard() {
       date: '',
       time: '',
       location: '',
+      latitude: undefined,
+      longitude: undefined,
       minParticipants: '1',
       maxParticipants: '10',
       joiningFee: '0',
@@ -350,6 +365,8 @@ export function HostDashboard() {
       date: new Date(event.date).toISOString().split('T')[0],
       time: event.time,
       location: event.location,
+      latitude: event.latitude,
+      longitude: event.longitude,
       minParticipants: event.minParticipants.toString(),
       maxParticipants: event.maxParticipants.toString(),
       joiningFee: event.joiningFee.toString(),
@@ -879,10 +896,28 @@ function EventForm({
           id="location"
           value={formData.location}
           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-          placeholder="Enter event location"
-          className="w-full text-gray-900 placeholder:text-gray-400"
+          placeholder="Enter event location or click on map"
+          className="w-full text-gray-900 placeholder:text-gray-400 mb-3"
           required
         />
+        <LocationPicker
+          latitude={formData.latitude}
+          longitude={formData.longitude}
+          onLocationChange={(lat, lng, address) => {
+            setFormData({
+              ...formData,
+              latitude: lat,
+              longitude: lng,
+              location: address,
+            });
+          }}
+          height="350px"
+        />
+        {(formData.latitude && formData.longitude) && (
+          <p className="mt-2 text-xs text-gray-500">
+            Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -53,7 +53,7 @@ export function EnhancedHostProfile() {
   const { user, token, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const profileUserId = searchParams.get('userId') || user?._id;
+  const profileUserId = (searchParams?.get('userId') || user?._id || '') as string;
   const isOwnProfile = profileUserId === user?._id;
 
   const [activeTab, setActiveTab] = useState<'about' | 'events' | 'friends' | 'reviews'>('about');

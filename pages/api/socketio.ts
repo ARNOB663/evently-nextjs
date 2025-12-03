@@ -7,8 +7,8 @@ import Message from '@/lib/models/Message';
 import { verifyToken, JWTPayload } from '@/lib/utils/auth';
 
 type NextApiResponseWithSocket = NextApiResponse & {
-  socket: NetServer['socket'] & {
-    server: {
+  socket: {
+    server: NetServer & {
       io?: SocketIOServer;
     };
   };

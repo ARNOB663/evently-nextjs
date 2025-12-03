@@ -76,6 +76,8 @@ export async function PUT(
       date,
       time,
       location,
+      latitude,
+      longitude,
       minParticipants,
       maxParticipants,
       joiningFee,
@@ -91,6 +93,8 @@ export async function PUT(
     if (date) updateData.date = new Date(date);
     if (time) updateData.time = time;
     if (location) updateData.location = location;
+    if (latitude !== undefined) updateData.latitude = Number(latitude);
+    if (longitude !== undefined) updateData.longitude = Number(longitude);
     if (minParticipants) updateData.minParticipants = minParticipants;
     if (maxParticipants) updateData.maxParticipants = maxParticipants;
     if (joiningFee !== undefined) updateData.joiningFee = joiningFee;

@@ -9,6 +9,8 @@ export interface IEvent extends Document {
   date: Date;
   time: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   minParticipants: number;
   maxParticipants: number;
   currentParticipants: number;
@@ -55,6 +57,14 @@ const EventSchema: Schema = new Schema(
       type: String,
       required: [true, 'Location is required'],
       trim: true,
+    },
+    latitude: {
+      type: Number,
+      default: undefined,
+    },
+    longitude: {
+      type: Number,
+      default: undefined,
     },
     minParticipants: {
       type: Number,

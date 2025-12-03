@@ -45,8 +45,16 @@ export async function GET(
         if (authUser && authUser.userId !== userId) {
           const currentUser = await User.findById(authUser.userId);
           if (currentUser) {
-            const isFriend = currentUser.friends.includes(userId);
-            const isBlocked = currentUser.blockedUsers.includes(userId) || user.blockedUsers.includes(authUser.userId);
+            const isFriend = currentUser.friends.some(
+              (friendId) => friendId.toString() === userId
+            );
+            const isBlocked =
+              currentUser.blockedUsers.some(
+                (blockedId) => blockedId.toString() === userId
+              ) ||
+              user.blockedUsers.some(
+                (blockedId) => blockedId.toString() === authUser.userId
+              );
             
             if (isBlocked) {
               friendStatus = { status: 'blocked' };

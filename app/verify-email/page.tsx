@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Mail, Loader2, CheckCircle2, XCircle } from 'lucide-react';
@@ -11,7 +11,7 @@ import { Footer } from '../components/Footer';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
@@ -108,6 +108,14 @@ export default function VerifyEmailPage() {
       </div>
       <Footer />
     </>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-24" />}>
+      <VerifyEmailPageInner />
+    </Suspense>
   );
 }
 

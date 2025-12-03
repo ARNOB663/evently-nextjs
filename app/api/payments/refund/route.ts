@@ -6,7 +6,7 @@ import Event from '@/lib/models/Event';
 import { requireAuth } from '@/lib/middleware/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-11-17.clover',
 });
 
 // POST /api/payments/refund - Process refund

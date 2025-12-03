@@ -46,7 +46,9 @@ export async function GET(
               } else if (user.privacySettings?.profileVisibility === 'only me') {
                 canViewFriends = false;
               } else if (user.privacySettings?.profileVisibility === 'friends') {
-                canViewFriends = currentUser.friends.includes(userId);
+                canViewFriends = currentUser.friends.some(
+                  (friendId) => friendId.toString() === userId
+                );
               }
             }
           }

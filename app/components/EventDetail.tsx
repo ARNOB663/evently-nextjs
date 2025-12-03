@@ -30,6 +30,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { ReviewsList } from './ReviewsList';
 import { ReviewForm } from './ReviewForm';
 import { EventComments } from './EventComments';
+import { EventPhotos } from './EventPhotos';
 import { ReportButton } from './ReportButton';
 import { toast } from 'sonner';
 

@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Shield, Eye, UserPlus, Users, EyeOff, Save, Loader2, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../../../contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Label } from '../../../components/ui/label';
-import { Badge } from '../../../components/ui/badge';
+import { useAuth } from '../../contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
 import Link from 'next/link';
 
 interface PrivacySettings {

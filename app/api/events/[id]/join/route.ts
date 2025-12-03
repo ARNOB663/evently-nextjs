@@ -99,6 +99,13 @@ export async function POST(
       .populate('hostId', 'fullName profileImage averageRating email')
       .populate('participants', 'fullName profileImage');
 
+    if (!updatedEvent) {
+      return NextResponse.json(
+        { error: 'Failed to load updated event data' },
+        { status: 500 }
+      );
+    }
+
     // Get user info for notifications
     const participantUser = await User.findById(user.userId);
 

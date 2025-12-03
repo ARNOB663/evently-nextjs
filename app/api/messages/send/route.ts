@@ -38,12 +38,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if blocked
-    if (currentUser.blockedUsers.includes(receiverId) || receiver.blockedUsers.includes(user.userId)) {
+    const isBlockedByCurrent = currentUser.blockedUsers.some(
+      (blockedId) => blockedId.toString() === receiverId
+    );
+    const isBlockedByReceiver = receiver.blockedUsers.some(
+      (blockedId) => blockedId.toString() === user.userId
+    );
+    if (isBlockedByCurrent || isBlockedByReceiver) {
       return NextResponse.json({ error: 'Cannot send message' }, { status: 403 });
     }
 
     // Check if friends (for 1:1 messaging, only friends can message)
-    if (!currentUser.friends.includes(receiverId)) {
+    if (!currentUser.friends.some((friendId) => friendId.toString() === receiverId)) {
       return NextResponse.json({ error: 'Can only message friends' }, { status: 403 });
     }
 

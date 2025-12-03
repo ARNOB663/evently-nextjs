@@ -57,7 +57,8 @@ export async function POST(
 
       // Create notification if enabled
       const visitor = await User.findById(user.userId);
-      if (visitor && visitedUser.privacySettings?.showProfileVisits !== false) {
+      const showVisits = visitedUser.privacySettings?.showProfileVisits;
+      if (visitor && (showVisits === undefined || showVisits === true)) {
         await Notification.create({
           user: visitedUserId,
           type: 'profile_visit',
