@@ -5,6 +5,7 @@ import FriendRequest from '@/lib/models/FriendRequest';
 import Notification from '@/lib/models/Notification';
 import { requireAuth } from '@/lib/middleware/auth';
 import mongoose from 'mongoose';
+import { sendEmail, generateEmailTemplate } from '@/lib/utils/email';
 
 // POST /api/friends/accept - Accept friend request
 export async function POST(req: NextRequest) {
@@ -90,6 +91,19 @@ export async function POST(req: NextRequest) {
       relatedUser: toUserId,
       isRead: false,
     });
+
+    // Send email notification
+    const fromUser = await User.findById(fromUserId);
+    if (fromUser?.email) {
+      await sendEmail({
+        to: fromUser.email,
+        subject: 'Friend Request Accepted',
+        html: generateEmailTemplate('friend_accepted', {
+          fromName: currentUser?.fullName || 'Someone',
+          userId: toUserId,
+        }),
+      });
+    }
 
     return NextResponse.json(
       { message: 'Friend request accepted', friendRequest: populatedRequest },

@@ -110,12 +110,27 @@ export async function GET(req: NextRequest) {
       recommendedUsers.push(...popularHosts);
     }
 
-    // Remove duplicates and limit
+    // Remove duplicates
     const uniqueUsers = Array.from(
       new Map(recommendedUsers.map((u) => [u._id.toString(), u])).values()
-    ).slice(0, limit);
+    );
 
-    return NextResponse.json({ users: uniqueUsers }, { status: 200 });
+    // If we have some recommendations, return up to the requested limit
+    if (uniqueUsers.length > 0) {
+      return NextResponse.json({ users: uniqueUsers.slice(0, limit) }, { status: 200 });
+    }
+
+    // Fallback: show general people directory (everyone except current user + blocked + already friends)
+    const fallbackUsers = await User.find({
+      _id: {
+        $ne: user.userId,
+        $nin: [...currentUser.friends, ...currentUser.blockedUsers],
+      },
+    })
+      .select('fullName profileImage bio location interests role')
+      .limit(limit);
+
+    return NextResponse.json({ users: fallbackUsers }, { status: 200 });
   } catch (error: any) {
     console.error('Get recommendations error:', error);
     return NextResponse.json(

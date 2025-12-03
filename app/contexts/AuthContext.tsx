@@ -107,15 +107,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Store token and user
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      setToken(data.token);
-      setUser(data.user);
+      // Store a one-time flag so login page can show a success banner
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(
+            'registrationSuccess',
+            JSON.stringify({
+              email,
+              fullName,
+              message: 'Account created! Please verify your email before logging in.',
+            })
+          );
+        }
+      } catch (e) {
+        console.error('Failed to store registration success flag', e);
+      }
 
-      // Always redirect to home page after registration
-      router.push('/');
+      // Do NOT auto-login after registration.
+      // User must verify email first, then log in manually.
+      router.push('/login');
     } catch (error: any) {
       throw new Error(error.message || 'Registration failed');
     }

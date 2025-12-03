@@ -18,7 +18,9 @@ import {
   Clock,
   MapPin,
   Tag,
+  BarChart3,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -406,16 +408,27 @@ export function HostDashboard() {
               </h1>
               <p className="text-gray-600">Manage your events and track your performance</p>
             </div>
-            <Button
-              onClick={() => {
-                resetForm();
-                setIsCreateDialogOpen(true);
-              }}
-              className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Event
-            </Button>
+            <div className="flex gap-2">
+              <Link href="/host/analytics">
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Analytics
+                </Button>
+              </Link>
+              <Button
+                onClick={() => {
+                  resetForm();
+                  setIsCreateDialogOpen(true);
+                }}
+                className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Event
+              </Button>
+            </div>
           </div>
         </motion.div>
 

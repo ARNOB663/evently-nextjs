@@ -33,6 +33,7 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface SocialMediaLinks {
   instagram?: string;
@@ -269,19 +270,21 @@ export function EditUserProfile() {
         console.log('✅ Profile saved successfully:', data.user);
         console.log('✅ Cover image in saved data:', data.user?.coverImage);
         setSuccess('Profile updated successfully!');
-        
+        toast.success('Profile updated successfully!');
+
         // Update localStorage immediately
         if (data.user) {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
-        
+
         // Wait a bit then navigate and refresh
         setTimeout(() => {
           router.push('/profile');
           router.refresh();
-        }, 1500);
+        }, 1200);
       } else {
         setError(data.error || 'Failed to update profile');
+        toast.error(data.error || 'Failed to update profile');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
@@ -844,16 +847,6 @@ export function EditUserProfile() {
               </span>
             </Button>
           </motion.div>
-          <Link href="/profile" className="flex-1">
-            <Button
-              variant="outline"
-              disabled={saving}
-              className="w-full border-2 hover:bg-gray-50 transition-all duration-200"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancel
-            </Button>
-          </Link>
         </motion.div>
       </div>
     </div>

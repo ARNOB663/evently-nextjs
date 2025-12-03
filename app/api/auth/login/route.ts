@@ -28,6 +28,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if user is banned
+    if (user.banned) {
+      return NextResponse.json(
+        { error: 'Your account has been banned. Please contact support.' },
+        { status: 403 }
+      );
+    }
+
     // Compare password
     const isPasswordValid = await comparePassword(password, user.password);
     
@@ -35,6 +43,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
+      );
+    }
+
+    // Require email verification before login
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        { error: 'Please verify your email before logging in. Check your inbox for a verification link.' },
+        { status: 403 }
       );
     }
 
@@ -66,6 +82,7 @@ export async function POST(req: NextRequest) {
       socialMediaLinks: user.socialMediaLinks,
       averageRating: user.averageRating,
       totalReviews: user.totalReviews,
+      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

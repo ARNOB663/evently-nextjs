@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import {
   Calendar,
@@ -16,6 +16,10 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  CreditCard,
+  Share2,
+  Heart,
+  Camera,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
@@ -23,6 +27,11 @@ import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ReviewsList } from './ReviewsList';
+import { ReviewForm } from './ReviewForm';
+import { EventComments } from './EventComments';
+import { ReportButton } from './ReportButton';
+import { toast } from 'sonner';
 
 interface EventDetailProps {
   eventId: string;
@@ -58,16 +67,110 @@ interface Event {
 export function EventDetail({ eventId }: EventDetailProps) {
   const { user, token, isAuthenticated } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [refreshReviews, setRefreshReviews] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
     fetchEvent();
-  }, [eventId]);
+    if (user && token) {
+      checkFavorite();
+    }
+  }, [eventId, user, token]);
+
+  // Handle payment success/cancelled query params
+  useEffect(() => {
+    const paymentStatus = searchParams?.get('payment');
+    if (paymentStatus === 'success') {
+      toast.success('Payment successful! You have been added to the event.');
+      fetchEvent(); // Refresh event data
+      router.replace(`/events/${eventId}`); // Remove query params
+    } else if (paymentStatus === 'cancelled') {
+      toast.error('Payment was cancelled.');
+      router.replace(`/events/${eventId}`); // Remove query params
+    }
+  }, [searchParams, eventId, router]);
+
+  const checkFavorite = async () => {
+    if (!token || !user) return;
+
+    try {
+      const response = await fetch(`/api/users/${user._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const favorites = data.user?.favoriteEvents || [];
+        setIsFavorite(favorites.includes(eventId));
+      }
+    } catch (error) {
+      console.error('Failed to check favorite:', error);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!isAuthenticated || !token) {
+      toast.error('Please log in to save favorites');
+      return;
+    }
+
+    try {
+      setFavoriteLoading(true);
+      const method = isFavorite ? 'DELETE' : 'POST';
+      const response = await fetch(`/api/events/${eventId}/favorite`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        setIsFavorite(!isFavorite);
+        toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites');
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to update favorite');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update favorite');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/events/${eventId}`;
+    const text = `Check out this event: ${event?.eventName}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: event?.eventName,
+          text: text,
+          url: url,
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard!');
+      } catch (error) {
+        toast.error('Failed to copy link');
+      }
+    }
+  };
 
   const fetchEvent = async () => {
     try {
@@ -94,6 +197,13 @@ export function EventDetail({ eventId }: EventDetailProps) {
       return;
     }
 
+    // If event has a joining fee, redirect to payment
+    if (event && event.joiningFee > 0) {
+      handlePaymentCheckout();
+      return;
+    }
+
+    // Free event - join directly
     try {
       setJoining(true);
       setError(null);
@@ -111,14 +221,53 @@ export function EventDetail({ eventId }: EventDetailProps) {
       if (response.ok) {
         setSuccess('Successfully joined the event!');
         setEvent(data.event);
+        toast.success('Successfully joined the event!');
         setTimeout(() => setSuccess(null), 3000);
       } else {
         setError(data.error || 'Failed to join event');
+        toast.error(data.error || 'Failed to join event');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to join event');
+      toast.error(err.message || 'Failed to join event');
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handlePaymentCheckout = async () => {
+    if (!isAuthenticated || !token) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+      setError(null);
+
+      const response = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        setError(data.error || 'Failed to create checkout session');
+        toast.error(data.error || 'Failed to create checkout session');
+        setProcessingPayment(false);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to process payment');
+      toast.error(err.message || 'Failed to process payment');
+      setProcessingPayment(false);
     }
   };
 
@@ -288,8 +437,11 @@ export function EventDetail({ eventId }: EventDetailProps) {
                   </div>
                 </div>
               )}
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 right-4 flex items-center gap-2">
                 <Badge className={getStatusColor(event.status)}>{event.status}</Badge>
+                {isAuthenticated && user && !isHost() && (
+                  <ReportButton type="event" reportedEventId={eventId} />
+                )}
               </div>
             </motion.div>
 
@@ -371,9 +523,10 @@ export function EventDetail({ eventId }: EventDetailProps) {
                   </p>
                 </div>
               </Card>
+            </motion.div>
 
-              {/* Participants Section */}
-              {event.participants && event.participants.length > 0 && (
+            {/* Participants Section */}
+            {event.participants && event.participants.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -403,7 +556,73 @@ export function EventDetail({ eventId }: EventDetailProps) {
                     </div>
                   </Card>
                 </motion.div>
-              )}
+            )}
+
+            {/* Reviews Section */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                key={refreshReviews}
+              >
+                <Card className="p-6 sm:p-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+                    Reviews
+                  </h2>
+
+                  {/* Review Form - Only show if user is a participant and not the host */}
+                  {isAuthenticated &&
+                    user &&
+                    isParticipant() &&
+                    !isHost() && (
+                      <div className="mb-8">
+                        <ReviewForm
+                          hostId={event.hostId._id}
+                          eventId={eventId}
+                          eventName={event.eventName}
+                          onSuccess={() => {
+                            setRefreshReviews((prev) => prev + 1);
+                            fetchEvent();
+                          }}
+                        />
+                      </div>
+                    )}
+
+                  {/* Reviews List */}
+                  <ReviewsList eventId={eventId} showEventName={false} />
+                </Card>
+            </motion.div>
+
+            {/* Comments Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Card className="p-6 sm:p-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Discussion</h2>
+                <EventComments eventId={eventId} />
+              </Card>
+            </motion.div>
+
+            {/* Photos Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Card className="p-6 sm:p-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <Camera className="w-6 h-6 text-teal-600" />
+                  Event Photos
+                </h2>
+                <EventPhotos
+                  eventId={eventId}
+                  isParticipant={isParticipant()}
+                  isHost={isHost()}
+                />
+              </Card>
             </motion.div>
           </div>
 
@@ -466,20 +685,40 @@ export function EventDetail({ eventId }: EventDetailProps) {
                     )}
                   </Button>
                 ) : canJoin() ? (
-                  <Button
-                    className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
-                    onClick={handleJoinEvent}
-                    disabled={joining}
-                  >
-                    {joining ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Joining...
-                      </>
-                    ) : (
-                      'Join Event'
-                    )}
-                  </Button>
+                  event.joiningFee > 0 ? (
+                    <Button
+                      className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                      onClick={handlePaymentCheckout}
+                      disabled={processingPayment}
+                    >
+                      {processingPayment ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Pay ${event.joiningFee} to Join
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                      onClick={handleJoinEvent}
+                      disabled={joining}
+                    >
+                      {joining ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Joining...
+                        </>
+                      ) : (
+                        'Join Event'
+                      )}
+                    </Button>
+                  )
                 ) : (
                   <Button variant="outline" className="w-full" disabled>
                     {event.status === 'full'
@@ -503,6 +742,33 @@ export function EventDetail({ eventId }: EventDetailProps) {
                     to join this event
                   </p>
                 )}
+
+                {/* Share and Favorite Buttons */}
+                <div className="mt-4 pt-4 border-t flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleShare}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </Button>
+                  {isAuthenticated && (
+                    <Button
+                      variant={isFavorite ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleToggleFavorite}
+                      disabled={favoriteLoading}
+                    >
+                      <Heart
+                        className={`w-4 h-4 mr-2 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
+                      />
+                      {isFavorite ? 'Saved' : 'Save'}
+                    </Button>
+                  )}
+                </div>
               </Card>
 
               {/* Host Card */}

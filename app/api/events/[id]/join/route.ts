@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Event from '@/lib/models/Event';
+import User from '@/lib/models/User';
+import Notification from '@/lib/models/Notification';
+import Activity from '@/lib/models/Activity';
 import { authenticateRequest } from '@/lib/middleware/auth';
+import { sendEmail, generateEmailTemplate } from '@/lib/utils/email';
 
 // POST /api/events/[id]/join - Join an event
 export async function POST(
@@ -62,6 +66,24 @@ export async function POST(
       );
     }
 
+    // Check if event requires payment
+    if (event.joiningFee > 0) {
+      // Check if payment exists and is completed
+      const Payment = (await import('@/lib/models/Payment')).default;
+      const payment = await Payment.findOne({
+        userId: user.userId,
+        eventId: id,
+        status: 'completed',
+      });
+
+      if (!payment) {
+        return NextResponse.json(
+          { error: 'Payment required to join this event' },
+          { status: 402 } // Payment Required
+        );
+      }
+    }
+
     // Add user to participants
     event.participants.push(user.userId as any);
     event.currentParticipants += 1;
@@ -74,8 +96,46 @@ export async function POST(
     await event.save();
 
     const updatedEvent = await Event.findById(event._id)
-      .populate('hostId', 'fullName profileImage averageRating')
+      .populate('hostId', 'fullName profileImage averageRating email')
       .populate('participants', 'fullName profileImage');
+
+    // Get user info for notifications
+    const participantUser = await User.findById(user.userId);
+
+    // Create notification for host
+    await Notification.create({
+      user: event.hostId,
+      type: 'friend_joined_event',
+      title: 'New Participant',
+      message: `${participantUser?.fullName} joined your event: ${event.eventName}`,
+      relatedUser: user.userId,
+      relatedEvent: event._id,
+      isRead: false,
+    });
+
+    // Send email to host
+    if (updatedEvent.hostId && typeof updatedEvent.hostId === 'object' && 'email' in updatedEvent.hostId) {
+      const hostEmail = (updatedEvent.hostId as any).email;
+      if (hostEmail) {
+        await sendEmail({
+          to: hostEmail,
+          subject: 'Someone Joined Your Event',
+          html: generateEmailTemplate('event_joined', {
+            participantName: participantUser?.fullName || 'Someone',
+            eventName: event.eventName,
+            eventId: event._id.toString(),
+          }),
+        });
+      }
+    }
+
+    // Create activity
+    await Activity.create({
+      userId: user.userId,
+      type: 'event_joined',
+      relatedEvent: event._id,
+      message: `${participantUser?.fullName} joined ${event.eventName}`,
+    });
 
     return NextResponse.json(
       {

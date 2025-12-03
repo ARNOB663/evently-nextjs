@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/lib/models/User';
+import EmailVerification from '@/lib/models/EmailVerification';
 import { hashPassword, generateToken } from '@/lib/utils/auth';
+import { sendEmail } from '@/lib/utils/email';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,6 +69,36 @@ export async function POST(req: NextRequest) {
       website: '',
       socialMediaLinks: socialDefaults,
     });
+
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour expiry
+
+    await EmailVerification.create({
+      userId: user._id,
+      token: verificationToken,
+      expiresAt,
+    });
+
+    // Send verification email
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const verifyLink = `${baseUrl}/verify-email?token=${verificationToken}`;
+    const { generateEmailTemplate } = await import('@/lib/utils/email');
+
+    const emailSent = await sendEmail({
+      to: user.email,
+      subject: 'Welcome to Evently - Verify Your Email',
+      html: generateEmailTemplate('welcome', {
+        fullName: user.fullName,
+        verifyLink,
+      }),
+    });
+
+    // Log if email sending failed (but don't fail registration)
+    if (!emailSent) {
+      console.warn('⚠️  Failed to send verification email, but user registration succeeded');
+    }
 
     // Generate token
     const token = generateToken({

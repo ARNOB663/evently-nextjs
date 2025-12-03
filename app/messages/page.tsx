@@ -180,12 +180,30 @@ export default function MessagesPage() {
 
     setSending(true);
     try {
-      // Optimistic UI update and real-time via socket
+      // Optimistic UI update
+      if (user?._id) {
+        const now = new Date().toISOString();
+        setMessages((prev) => [
+          ...prev,
+          {
+            _id: `temp-${now}`,
+            sender: { _id: user._id, fullName: user.fullName, profileImage: user.profileImage },
+            receiver: { _id: selectedConversation, fullName: '', profileImage: undefined },
+            content: messageInput.trim(),
+            isRead: false,
+            createdAt: now,
+          },
+        ]);
+      }
+
+      // Real-time via socket
       socketRef.current?.emit('message:send', {
         receiverId: selectedConversation,
         content: messageInput.trim(),
       });
       setMessageInput('');
+      // Keep conversations list in sync
+      fetchConversations();
     } catch (error) {
       console.error('Failed to send message:', error);
       alert('Failed to send message');

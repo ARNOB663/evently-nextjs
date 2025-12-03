@@ -53,6 +53,11 @@ export function EventsList() {
   const [eventTypeFilter, setEventTypeFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -63,7 +68,7 @@ export function EventsList() {
 
   useEffect(() => {
     fetchEvents();
-  }, [page, searchQuery, eventTypeFilter, locationFilter, statusFilter]);
+  }, [page, searchQuery, eventTypeFilter, locationFilter, statusFilter, dateFrom, dateTo, priceMin, priceMax, selectedEventTypes]);
 
   const fetchEvents = async () => {
     try {
@@ -79,6 +84,13 @@ export function EventsList() {
       if (eventTypeFilter) params.append('eventType', eventTypeFilter);
       if (locationFilter) params.append('location', locationFilter);
       if (statusFilter) params.append('status', statusFilter);
+      if (dateFrom) params.append('dateFrom', dateFrom);
+      if (dateTo) params.append('dateTo', dateTo);
+      if (priceMin) params.append('priceMin', priceMin);
+      if (priceMax) params.append('priceMax', priceMax);
+      if (selectedEventTypes.length > 0) {
+        selectedEventTypes.forEach((type) => params.append('eventTypes', type));
+      }
 
       const response = await fetch(`/api/events?${params.toString()}`);
       const data = await response.json();
@@ -108,10 +120,30 @@ export function EventsList() {
     setEventTypeFilter('');
     setLocationFilter('');
     setStatusFilter('');
+    setDateFrom('');
+    setDateTo('');
+    setPriceMin('');
+    setPriceMax('');
+    setSelectedEventTypes([]);
     setPage(1);
   };
 
-  const hasActiveFilters = searchQuery || eventTypeFilter || locationFilter || statusFilter;
+  const toggleEventType = (type: string) => {
+    setSelectedEventTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
+  const hasActiveFilters =
+    searchQuery ||
+    eventTypeFilter ||
+    locationFilter ||
+    statusFilter ||
+    dateFrom ||
+    dateTo ||
+    priceMin ||
+    priceMax ||
+    selectedEventTypes.length > 0;
 
   const getStatusColor = (status: string) => {
     switch (status) {
