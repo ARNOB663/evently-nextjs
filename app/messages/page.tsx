@@ -59,54 +59,120 @@ function MessagesPageInner() {
   const [typingUserId, setTypingUserId] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize socket connection
+  // Polling fallback for Vercel (where Socket.IO doesn't work)
+  useEffect(() => {
+    if (!token || !selectedConversation) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Check if we're on Vercel
+    const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+    
+    // Only use polling if Socket.IO is not available
+    if (isVercel || !socketRef.current?.connected) {
+      // Poll for new messages every 3 seconds
+      const pollMessages = () => {
+        if (selectedConversation) {
+          fetchMessages(selectedConversation);
+        }
+        fetchConversations();
+      };
+      
+      pollingIntervalRef.current = setInterval(pollMessages, 3000);
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, selectedConversation]);
+
+  // Initialize socket connection (optional - gracefully handle failures on Vercel)
   useEffect(() => {
     if (!token || socketRef.current) return;
 
-    const socket = io('', {
-      path: '/api/socketio',
-      auth: { token },
-    });
+    // Check if we're on Vercel (serverless) - Socket.IO won't work
+    const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+    
+    if (isVercel) {
+      // On Vercel, skip Socket.IO and rely on polling/HTTP only
+      console.log('Socket.IO disabled on Vercel - using HTTP polling');
+      return;
+    }
 
-    socketRef.current = socket;
+    try {
+      const socket = io('', {
+        path: '/api/socketio',
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000,
+        timeout: 5000,
+      });
 
-    socket.on('connect', () => {
-      // console.log('Socket connected', socket.id);
-    });
+      socketRef.current = socket;
 
-    socket.on('message:new', (payload: { _id: string; senderId: string; receiverId: string; content: string; createdAt: string }) => {
-      const currentSelected = selectedConversationRef.current;
-      // Update messages in real-time if this conversation is open
-      if (currentSelected && (payload.senderId === currentSelected || payload.receiverId === currentSelected)) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            _id: payload._id,
-            sender: { _id: payload.senderId, fullName: '', profileImage: undefined },
-            receiver: { _id: payload.receiverId, fullName: '', profileImage: undefined },
-            content: payload.content,
-            isRead: payload.receiverId === user?._id,
-            createdAt: payload.createdAt,
-          },
-        ]);
-      }
-      // Refresh conversations list for unread counts / last message
-      fetchConversations();
-    });
+      socket.on('connect', () => {
+        // console.log('Socket connected', socket.id);
+      });
 
-    socket.on('typing', (payload: { userId: string; isTyping: boolean }) => {
-      const currentSelected = selectedConversationRef.current;
-      if (!currentSelected) return;
-      if (payload.userId === currentSelected) {
-        setTypingUserId(payload.isTyping ? payload.userId : null);
-      }
-    });
+      socket.on('connect_error', (error) => {
+        console.warn('Socket connection error (non-critical):', error.message);
+        // Don't show error to user - gracefully degrade to HTTP polling
+      });
 
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-    };
+      socket.on('message:new', (payload: { _id: string; senderId: string; receiverId: string; content: string; createdAt: string }) => {
+        const currentSelected = selectedConversationRef.current;
+        // Update messages in real-time if this conversation is open
+        // Only add if message doesn't already exist (prevent duplicates)
+        if (currentSelected && (payload.senderId === currentSelected || payload.receiverId === currentSelected)) {
+          setMessages((prev) => {
+            // Check if message already exists
+            const exists = prev.some((msg) => msg._id === payload._id);
+            if (exists) return prev;
+            
+            return [
+              ...prev,
+              {
+                _id: payload._id,
+                sender: { _id: payload.senderId, fullName: '', profileImage: undefined },
+                receiver: { _id: payload.receiverId, fullName: '', profileImage: undefined },
+                content: payload.content,
+                isRead: payload.receiverId === user?._id,
+                createdAt: payload.createdAt,
+              },
+            ];
+          });
+        }
+        // Refresh conversations list for unread counts / last message
+        fetchConversations();
+      });
+
+      socket.on('typing', (payload: { userId: string; isTyping: boolean }) => {
+        const currentSelected = selectedConversationRef.current;
+        if (!currentSelected) return;
+        if (payload.userId === currentSelected) {
+          setTypingUserId(payload.isTyping ? payload.userId : null);
+        }
+      });
+
+      return () => {
+        socket.disconnect();
+        socketRef.current = null;
+      };
+    } catch (error) {
+      console.warn('Failed to initialize Socket.IO (non-critical):', error);
+    }
   }, [token, user?._id]);
 
   useEffect(() => {
@@ -179,6 +245,10 @@ function MessagesPageInner() {
     if (!messageInput.trim() || !selectedConversation || !token || sending) return;
 
     setSending(true);
+    const messageContent = messageInput.trim();
+    const tempId = `temp-${Date.now()}`;
+    setMessageInput('');
+
     try {
       // Optimistic UI update
       if (user?._id) {
@@ -186,25 +256,68 @@ function MessagesPageInner() {
         setMessages((prev) => [
           ...prev,
           {
-            _id: `temp-${now}`,
+            _id: tempId,
             sender: { _id: user._id, fullName: user.fullName, profileImage: user.profileImage },
             receiver: { _id: selectedConversation, fullName: '', profileImage: undefined },
-            content: messageInput.trim(),
+            content: messageContent,
             isRead: false,
             createdAt: now,
           },
         ]);
       }
 
-      // Real-time via socket
-      socketRef.current?.emit('message:send', {
-        receiverId: selectedConversation,
-        content: messageInput.trim(),
+      // Send via HTTP API (primary method)
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          receiverId: selectedConversation,
+          content: messageContent,
+        }),
       });
-      setMessageInput('');
-      // Keep conversations list in sync
+
+      if (response.ok) {
+        const data = await response.json();
+        const realMessage = data.data;
+
+        // Replace temp message with real message
+        setMessages((prev) => {
+          const filtered = prev.filter((msg) => msg._id !== tempId);
+          // Check if message already exists (from Socket.IO)
+          const exists = filtered.some((msg) => msg._id === realMessage._id);
+          if (exists) return filtered;
+          return [...filtered, {
+            _id: realMessage._id,
+            sender: realMessage.sender,
+            receiver: realMessage.receiver,
+            content: realMessage.content,
+            isRead: realMessage.isRead,
+            createdAt: realMessage.createdAt,
+          }];
+        });
+
+        // Also try Socket.IO (optional - for real-time to other user)
+        if (socketRef.current?.connected) {
+          socketRef.current.emit('message:send', {
+            receiverId: selectedConversation,
+            content: messageContent,
+          });
+        }
+      } else {
+        // Remove optimistic message on error
+        setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to send message');
+      }
+
+      // Refresh conversations list
       fetchConversations();
     } catch (error) {
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
       console.error('Failed to send message:', error);
       alert('Failed to send message');
     } finally {

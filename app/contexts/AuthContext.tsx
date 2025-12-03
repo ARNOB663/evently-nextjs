@@ -38,6 +38,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName: string, role?: string) => Promise<void>;
   logout: () => void;
+  refreshAuth: () => void;
   isAuthenticated: boolean;
 }
 
@@ -139,6 +140,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
+  const refreshAuth = () => {
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to refresh auth:', e);
+      }
+    } else {
+      setToken(null);
+      setUser(null);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -148,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        refreshAuth,
         isAuthenticated: !!user && !!token,
       }}
     >
