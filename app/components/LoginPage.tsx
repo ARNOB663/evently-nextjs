@@ -16,7 +16,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, refreshAuth } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -54,8 +54,13 @@ export function LoginPage() {
         window.localStorage.setItem('token', token);
         window.localStorage.setItem('user', JSON.stringify(decodedUser));
 
-        // Clean URL and redirect to home
-        router.replace('/');
+        // Update auth context immediately
+        refreshAuth();
+
+        // Small delay to ensure state updates, then redirect
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 100);
       }
     } catch (e) {
       console.error('Failed to handle social login callback', e);
