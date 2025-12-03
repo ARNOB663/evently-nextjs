@@ -76,15 +76,20 @@ function MessagesPageInner() {
     
     // Only use polling if Socket.IO is not available
     if (isVercel || !socketRef.current?.connected) {
-      // Poll for new messages every 3 seconds
+      // Poll for new messages every 5 seconds (reduced frequency to reduce blinking)
+      // Use skipUpdate=true to only add new messages, not replace entire array
       const pollMessages = () => {
         if (selectedConversation) {
-          fetchMessages(selectedConversation);
+          fetchMessages(selectedConversation, true); // skipUpdate=true for polling
         }
-        fetchConversations();
+        // Only fetch conversations if needed (less frequently)
+        const shouldUpdateConversations = Math.random() < 0.3; // 30% chance each poll
+        if (shouldUpdateConversations) {
+          fetchConversations();
+        }
       };
       
-      pollingIntervalRef.current = setInterval(pollMessages, 3000);
+      pollingIntervalRef.current = setInterval(pollMessages, 5000); // Increased to 5 seconds
     }
 
     return () => {
@@ -198,9 +203,19 @@ function MessagesPageInner() {
     setSelectedConversation(id);
   };
 
+  // Auto-scroll to bottom when new messages arrive (only if user is near bottom)
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const container = messagesContainerRef.current;
+    if (!container || messages.length === 0) return;
+    
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+    if (isNearBottom) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    }
+  }, [messages.length]); // Only trigger on message count change, not on every message update
 
   const fetchConversations = async () => {
     if (!token) return;
@@ -223,7 +238,7 @@ function MessagesPageInner() {
     }
   };
 
-  const fetchMessages = async (userId: string) => {
+  const fetchMessages = async (userId: string, skipUpdate = false) => {
     if (!token) return;
     try {
       const response = await fetch(`/api/messages/${userId}?limit=50`, {
@@ -234,7 +249,39 @@ function MessagesPageInner() {
 
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
+        const newMessages = data.messages || [];
+        
+        if (skipUpdate) {
+          // Only add new messages that don't exist yet (for polling)
+          // This prevents blinking by not replacing the entire array
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((msg) => msg._id));
+            const newOnes = newMessages.filter((msg: Message) => !existingIds.has(msg._id));
+            if (newOnes.length === 0) return prev; // No new messages, don't update (prevents re-render)
+            
+            // Check if user is near bottom (within 100px) to auto-scroll
+            const container = messagesContainerRef.current;
+            const isNearBottom = container 
+              ? container.scrollHeight - container.scrollTop - container.clientHeight < 100
+              : true;
+            
+            const updated = [...prev, ...newOnes].sort((a, b) => 
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
+            
+            // Auto-scroll only if user was near bottom
+            if (isNearBottom && newOnes.length > 0) {
+              setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }, 100);
+            }
+            
+            return updated;
+          });
+        } else {
+          // Full update (initial load or manual refresh)
+          setMessages(newMessages);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch messages:', error);
