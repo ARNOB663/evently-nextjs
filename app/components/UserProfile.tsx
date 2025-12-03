@@ -1,0 +1,751 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Edit,
+  Phone,
+  MapPin,
+  Globe,
+  Instagram,
+  Twitter,
+  Facebook,
+  Linkedin,
+  Loader2,
+  User,
+  Heart,
+  Mail,
+  Calendar,
+  Briefcase,
+  Building2,
+  Sparkles,
+  X,
+  Users,
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { Badge } from './ui/badge';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Label } from './ui/label';
+import Link from 'next/link';
+
+interface SocialMediaLinks {
+  instagram?: string;
+  twitter?: string;
+  facebook?: string;
+  linkedin?: string;
+  website?: string;
+}
+
+interface UserProfileData {
+  fullName: string;
+  bio: string;
+  profileImage: string;
+  coverImage: string;
+  phoneNumber: string;
+  location: string;
+  dateOfBirth: string;
+  gender: string;
+  occupation: string;
+  company: string;
+  website: string;
+  interests: string[];
+  preferredEventTypes: string[];
+  socialMediaLinks: SocialMediaLinks;
+}
+
+export function UserProfile() {
+  const { user, token, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
+  const [imageModal, setImageModal] = useState<{ isOpen: boolean; imageUrl: string; alt: string }>({
+    isOpen: false,
+    imageUrl: '',
+    alt: '',
+  });
+  const [mutualFriends, setMutualFriends] = useState<any[]>([]);
+  const [mutualEvents, setMutualEvents] = useState<any[]>([]);
+  const [userEvents, setUserEvents] = useState<any[]>([]);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [friendsCount, setFriendsCount] = useState(0);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [profileData, setProfileData] = useState<UserProfileData>({
+    fullName: '',
+    bio: '',
+    profileImage: '',
+    coverImage: '',
+    phoneNumber: '',
+    location: '',
+    dateOfBirth: '',
+    gender: '',
+    occupation: '',
+    company: '',
+    website: '',
+    interests: [],
+    preferredEventTypes: [],
+    socialMediaLinks: {
+      instagram: '',
+      twitter: '',
+      facebook: '',
+      linkedin: '',
+      website: '',
+    },
+  });
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && (!user || !token)) {
+      router.push('/login');
+    }
+  }, [user, token, authLoading, router]);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/users/${user?._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📥 Fetched profile data:', data.user);
+        console.log('📥 Cover image URL:', data.user?.coverImage);
+        setProfileData({
+          fullName: data.user.fullName || '',
+          bio: data.user.bio || '',
+          profileImage: data.user.profileImage || '',
+          coverImage: data.user.coverImage || '',
+          phoneNumber: data.user.phoneNumber || '',
+          location: data.user.location || '',
+          dateOfBirth: data.user.dateOfBirth || '',
+          gender: data.user.gender || '',
+          occupation: data.user.occupation || '',
+          company: data.user.company || '',
+          website: data.user.website || '',
+          interests: data.user.interests || [],
+          preferredEventTypes: data.user.preferredEventTypes || [],
+          socialMediaLinks: data.user.socialMediaLinks || {
+            instagram: '',
+            twitter: '',
+            facebook: '',
+            linkedin: '',
+            website: '',
+          },
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to load profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, token]);
+
+  // Fetch user profile
+  useEffect(() => {
+    if (user && token) {
+      fetchProfile();
+      fetchMutualConnections();
+      fetchUserEvents();
+      fetchFriends();
+      recordProfileVisit();
+    }
+  }, [user, token, fetchProfile]);
+
+  const fetchMutualConnections = async () => {
+    // Mutual connections are only relevant when viewing someone else's profile
+    // For own profile, we'll skip this
+    return;
+  };
+
+  const fetchUserEvents = async () => {
+    if (!user || !token || !user._id) return;
+    try {
+      const response = await fetch(`/api/users/${user._id}/events?type=all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserEvents(data.events || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user events:', error);
+    }
+  };
+
+  const fetchFriends = async () => {
+    if (!user || !token || !user._id) return;
+    setFriendsLoading(true);
+    try {
+      const response = await fetch(`/api/users/${user._id}/friends`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFriends(data.friends || []);
+        setFriendsCount(data.totalCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const recordProfileVisit = async () => {
+    // Don't record visit for own profile
+    return;
+  };
+
+  // Refetch when navigating back to profile page
+  useEffect(() => {
+    if (pathname === '/profile' && user && token) {
+      fetchProfile();
+    }
+  }, [pathname, user, token, fetchProfile]);
+
+  // Refetch when URL has refresh parameter
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('refresh') && user && token) {
+        fetchProfile();
+        // Clean up URL
+        window.history.replaceState({}, '', '/profile');
+      }
+    }
+  }, [user, token, fetchProfile]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && imageModal.isOpen) {
+        setImageModal({ isOpen: false, imageUrl: '', alt: '' });
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [imageModal.isOpen]);
+
+  const openImageModal = (imageUrl: string, alt: string) => {
+    if (imageUrl && imageUrl.trim() !== '') {
+      setImageModal({ isOpen: true, imageUrl, alt });
+    }
+  };
+
+  const closeImageModal = () => {
+    setImageModal({ isOpen: false, imageUrl: '', alt: '' });
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <Loader2 className="w-12 h-12 animate-spin text-teal-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading profile...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 pb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Cover Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative mb-6 rounded-2xl overflow-hidden shadow-xl"
+        >
+          <div 
+            className="relative h-48 sm:h-64 md:h-80 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 overflow-hidden cursor-pointer group"
+            onClick={() => openImageModal(profileData.coverImage, 'Cover image')}
+          >
+            {profileData.coverImage && profileData.coverImage.trim() !== '' ? (
+              <>
+                <ImageWithFallback
+                  src={profileData.coverImage}
+                  alt="Cover"
+                  className="w-full h-full object-cover absolute inset-0 z-0 transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 z-10 flex items-center justify-center">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ opacity: 1, scale: 1 }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  >
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                      <User className="w-6 h-6 text-teal-600" />
+                    </div>
+                  </motion.div>
+                </div>
+              </>
+            ) : null}
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 via-cyan-500/20 to-blue-500/20 z-10" />
+          </div>
+
+          {/* Profile Picture */}
+          <div className="relative z-20 -mt-20 sm:-mt-24 md:-mt-28 px-6 sm:px-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="relative inline-block"
+            >
+              <div 
+                className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border-4 border-white bg-white shadow-2xl overflow-hidden ring-4 ring-teal-100 cursor-pointer group"
+                onClick={() => openImageModal(profileData.profileImage, `${profileData.fullName}'s profile picture`)}
+              >
+                {profileData.profileImage ? (
+                  <>
+                    <ImageWithFallback
+                      src={profileData.profileImage}
+                      alt={profileData.fullName}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileHover={{ opacity: 1, scale: 1 }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      >
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                          <User className="w-5 h-5 text-teal-600" />
+                        </div>
+                      </motion.div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center">
+                    <User className="w-16 h-16 sm:w-20 sm:h-20 text-white" />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Profile Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                {profileData.fullName || user.fullName}
+              </h1>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Badge variant="secondary" className="text-sm px-3 py-1">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  User
+                </Badge>
+                {profileData.location && (
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm">{profileData.location}</span>
+                  </div>
+                )}
+                {profileData.occupation && (
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <Briefcase className="w-4 h-4" />
+                    <span className="text-sm">{profileData.occupation}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Link href="/profile/edit">
+                <Button className="bg-teal-600 hover:bg-teal-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Main Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Bio Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <Card className="p-6 sm:p-8 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-teal-600" />
+                  About
+                </h2>
+                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {profileData.bio || (
+                    <span className="text-gray-400 italic">No bio yet. Click Edit Profile to add one!</span>
+                  )}
+                </p>
+              </Card>
+            </motion.div>
+
+            {/* Personal Information */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              <Card className="p-6 sm:p-8 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-teal-600" />
+                  Personal Information
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {profileData.phoneNumber && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        Phone Number
+                      </Label>
+                      <p className="text-gray-700">{profileData.phoneNumber}</p>
+                    </div>
+                  )}
+                  {profileData.dateOfBirth && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        Date of Birth
+                      </Label>
+                      <p className="text-gray-700">{profileData.dateOfBirth}</p>
+                    </div>
+                  )}
+                  {profileData.gender && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Gender</Label>
+                      <p className="text-gray-700">{profileData.gender}</p>
+                    </div>
+                  )}
+                  {profileData.occupation && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+                        <Briefcase className="w-4 h-4 text-gray-500" />
+                        Occupation
+                      </Label>
+                      <p className="text-gray-700">{profileData.occupation}</p>
+                    </div>
+                  )}
+                  {profileData.company && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-gray-500" />
+                        Company
+                      </Label>
+                      <p className="text-gray-700">{profileData.company}</p>
+                    </div>
+                  )}
+                  {profileData.website && (
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-gray-500" />
+                        Website
+                      </Label>
+                      <a
+                        href={profileData.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-teal-600 hover:text-teal-700 underline"
+                      >
+                        {profileData.website}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Social Media Links */}
+            {(profileData.socialMediaLinks.instagram ||
+              profileData.socialMediaLinks.twitter ||
+              profileData.socialMediaLinks.facebook ||
+              profileData.socialMediaLinks.linkedin ||
+              profileData.socialMediaLinks.website) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                <Card className="p-6 sm:p-8 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-teal-600" />
+                    Social Media
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { key: 'instagram', icon: Instagram, label: 'Instagram', color: 'text-pink-600' },
+                      { key: 'twitter', icon: Twitter, label: 'Twitter', color: 'text-blue-400' },
+                      { key: 'facebook', icon: Facebook, label: 'Facebook', color: 'text-blue-600' },
+                      { key: 'linkedin', icon: Linkedin, label: 'LinkedIn', color: 'text-blue-700' },
+                      { key: 'website', icon: Globe, label: 'Website', color: 'text-gray-600' },
+                    ]
+                      .filter(({ key }) => profileData.socialMediaLinks[key as keyof SocialMediaLinks])
+                      .map(({ key, icon: Icon, label, color }) => (
+                        <div key={key} className="group">
+                          <Label className="text-xs font-medium text-gray-600 mb-2 block flex items-center gap-2">
+                            <Icon className={`w-4 h-4 ${color}`} />
+                            {label}
+                          </Label>
+                          <a
+                            href={profileData.socialMediaLinks[key as keyof SocialMediaLinks]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-teal-600 hover:text-teal-700 text-sm truncate block"
+                          >
+                            {profileData.socialMediaLinks[key as keyof SocialMediaLinks]}
+                          </a>
+                        </div>
+                      ))}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Preferred Event Types */}
+            {profileData.preferredEventTypes.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
+              >
+                <Card className="p-6 sm:p-8 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-teal-600" />
+                    Preferred Event Types
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.preferredEventTypes.map((type) => (
+                      <Badge key={type} variant="secondary" className="px-4 py-2 text-gray-900 bg-teal-100 border-teal-200">
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* User Events */}
+            {userEvents.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+              >
+                <Card className="p-6 sm:p-8 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-teal-600" />
+                    Events
+                  </h2>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Upcoming Events</h3>
+                      <div className="space-y-2">
+                        {userEvents
+                          .filter((e: any) => new Date(e.date) >= new Date())
+                          .slice(0, 3)
+                          .map((event: any) => (
+                            <Link
+                              key={event._id}
+                              href={`/events/${event._id}`}
+                              className="block p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                            >
+                              <p className="text-sm font-medium text-gray-900 group-hover:text-teal-600">
+                                {event.eventName}
+                              </p>
+                              <p className="text-xs text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                            </Link>
+                          ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Past Events</h3>
+                      <div className="space-y-2">
+                        {userEvents
+                          .filter((e: any) => new Date(e.date) < new Date())
+                          .slice(0, 3)
+                          .map((event: any) => (
+                            <Link
+                              key={event._id}
+                              href={`/events/${event._id}`}
+                              className="block p-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                            >
+                              <p className="text-sm font-medium text-gray-900 group-hover:text-teal-600">
+                                {event.eventName}
+                              </p>
+                              <p className="text-xs text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                            </Link>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Right Column - Sidebar */}
+          <div className="space-y-6">
+
+            {/* Interests */}
+            {profileData.interests.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <Card className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Interests</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.interests.map((interest) => (
+                      <Badge key={interest} variant="secondary" className="px-3 py-1 text-xs text-gray-900 bg-teal-100 border-teal-200">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Friends */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              <Card className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-teal-600" />
+                    Friends {friendsCount > 0 && `(${friendsCount})`}
+                  </h3>
+                  {friendsCount > 6 && (
+                    <Link
+                      href={`/friends?userId=${user?._id}`}
+                      className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                    >
+                      View All
+                    </Link>
+                  )}
+                </div>
+                {friendsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+                  </div>
+                ) : friends.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {friends.slice(0, 6).map((friend: any) => (
+                        <Link
+                          key={friend._id}
+                          href={`/profile?userId=${friend._id}`}
+                          className="group flex flex-col items-center"
+                        >
+                          {friend.profileImage ? (
+                            <ImageWithFallback
+                              src={friend.profileImage}
+                              alt={friend.fullName}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-white group-hover:border-teal-500 transition-all mb-2"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center border-2 border-white group-hover:border-teal-500 transition-all mb-2">
+                              <User className="w-8 h-8 text-teal-600" />
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-700 text-center group-hover:text-teal-600 transition-colors truncate w-full">
+                            {friend.fullName}
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                    {friendsCount > 6 && (
+                      <div className="text-center pt-2 border-t border-gray-100">
+                        <Link
+                          href={`/friends?userId=${user?._id}`}
+                          className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                        >
+                          View All {friendsCount} Friends
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm">No friends yet</p>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Image Modal */}
+      <AnimatePresence>
+        {imageModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+            onClick={closeImageModal}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeImageModal}
+                className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-3 transition-all duration-200 group"
+                aria-label="Close image"
+              >
+                <X className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+              </button>
+              <div className="relative w-full h-full flex items-center justify-center">
+                <ImageWithFallback
+                  src={imageModal.imageUrl}
+                  alt={imageModal.alt}
+                  className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+

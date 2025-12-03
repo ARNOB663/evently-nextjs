@@ -1,16 +1,16 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User, MessageSquare } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useAuth } from '../contexts/AuthContext';
+import { Notifications } from './Notifications';
 
-interface NavbarProps {
-  onNavigate?: (page: string) => void;
-}
-
-export function Navbar({ onNavigate }: NavbarProps) {
+export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Handle scroll effect
   useEffect(() => {
@@ -22,8 +22,12 @@ export function Navbar({ onNavigate }: NavbarProps) {
   }, []);
 
   // Close mobile menu when navigating
-  const handleNavigate = (page: string) => {
-    onNavigate?.(page);
+  const handleLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
     setIsMobileMenuOpen(false);
   };
 
@@ -32,7 +36,7 @@ export function Navbar({ onNavigate }: NavbarProps) {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[95%] sm:max-w-6xl px-2 sm:px-4"
+      className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[95%] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl px-2 sm:px-4"
     >
       <div
         className={`relative bg-white rounded-full shadow-lg transition-all duration-300 ${
@@ -58,60 +62,73 @@ export function Navbar({ onNavigate }: NavbarProps) {
           <div className="w-full h-full bg-white rounded-full" />
         </motion.div>
 
-        <div className="relative flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4">
+        <div className="relative flex items-center justify-between px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 gap-2 md:gap-3">
           {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex items-center space-x-2 cursor-pointer"
-            onClick={() => handleNavigate('home')}
-          >
-            <div className="relative">
-              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-1.5 sm:p-2 rounded-lg">
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
+          <Link href="/">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="flex items-center space-x-2 cursor-pointer"
+            >
+              <div className="relative flex items-center gap-2">
+                <div className="bg-gradient-to-r from-teal-500 to-cyan-500 p-1.5 sm:p-2 rounded-lg">
+                  <svg
+                    className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <span className="hidden sm:inline text-base sm:text-lg md:text-xl text-gray-900 whitespace-nowrap">
+                  Events & Activities
+                </span>
               </div>
-            </div>
-            <span className="text-base sm:text-lg md:text-xl text-gray-900">Events & Activities</span>
-          </motion.div>
+            </motion.div>
+          </Link>
 
           {/* Navigation Links */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="hidden md:flex items-center space-x-10"
+            className="hidden md:flex items-center gap-4 lg:gap-6"
           >
-            <button
-              onClick={() => handleNavigate('events')}
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
+            <Link
+              href="/events"
+              className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
             >
               Browse Events
-            </button>
+            </Link>
             <a
               href="#how-it-works"
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
+              className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
             >
               Features
             </a>
-            <button
-              onClick={() => handleNavigate('host')}
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
-            >
-              Host Dashboard
-            </button>
+            {isAuthenticated && user && (user.role === 'host' || user.role === 'admin') && (
+              <Link
+                href="/dashboard"
+                className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
+              >
+                Dashboard
+              </Link>
+            )}
+            {!isAuthenticated && (
+              <Link
+                href="/host-login"
+                className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
+              >
+                Host Login
+              </Link>
+            )}
           </motion.div>
 
           {/* Auth Buttons */}
@@ -119,23 +136,86 @@ export function Navbar({ onNavigate }: NavbarProps) {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4, duration: 0.5 }}
-            className="hidden md:flex items-center space-x-4"
+            className="hidden md:flex items-center gap-2"
           >
-            {/* Login Button */}
-            <button
-              onClick={() => handleNavigate('login')}
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium"
-            >
-              Login
-            </button>
+            {isAuthenticated && user ? (
+              <>
+                {/* Notifications */}
+                <Notifications />
+                {/* Primary quick actions (icons only on md, labels on xl) */}
+                <div className="flex items-center gap-1">
+                  {/* Discover Link */}
+                  <Link
+                    href="/discover"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors duration-200"
+                    title="Discover"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span className="hidden xl:inline text-sm">Discover</span>
+                  </Link>
+                  {/* Messages Link */}
+                  <Link
+                    href="/messages"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors duration-200 relative"
+                    title="Messages"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="hidden xl:inline text-sm">Messages</span>
+                  </Link>
+                  {/* Friends Link */}
+                  <Link
+                    href="/friends"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors duration-200 relative"
+                    title="Friends"
+                  >
+                    <Users className="w-4 h-4" />
+                    <span className="hidden xl:inline text-sm">Friends</span>
+                  </Link>
+                </div>
+                {/* User Info */}
+                <Link href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'} className="ml-1">
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.fullName}
+                      className="w-7 h-7 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-teal-500 transition-all"
+                      title={user.fullName}
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-teal-500 transition-all" title={user.fullName}>
+                      <User className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  )}
+                </Link>
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-red-600 transition-colors duration-200 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden xl:inline text-sm">Logout</span>
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Login Button */}
+                <Link
+                  href="/login"
+                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium text-sm whitespace-nowrap"
+                >
+                  Login
+                </Link>
 
-            {/* Sign Up Button */}
-            <button
-              onClick={() => handleNavigate('login-choice')}
-              className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm sm:text-base"
-            >
-              Join us
-            </button>
+                {/* Sign Up Button */}
+                <Link
+                  href="/login-choice"
+                  className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-2 rounded-full transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm whitespace-nowrap"
+                >
+                  Join us
+                </Link>
+              </>
+            )}
           </motion.div>
 
           {/* Mobile Menu Button */}
@@ -186,27 +266,29 @@ export function Navbar({ onNavigate }: NavbarProps) {
 
               {/* Navigation Links */}
               <div className="p-6 space-y-2">
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                  onClick={() => handleNavigate('home')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                >
-                  <Home className="w-5 h-5 text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Home</span>
-                </motion.button>
+                <Link href="/" onClick={handleLinkClick}>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                  >
+                    <Home className="w-5 h-5 text-teal-600" />
+                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Home</span>
+                  </motion.div>
+                </Link>
 
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 }}
-                  onClick={() => handleNavigate('events')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                >
-                  <Calendar className="w-5 h-5 text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Browse Events</span>
-                </motion.button>
+                <Link href="/events" onClick={handleLinkClick}>
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                  >
+                    <Calendar className="w-5 h-5 text-teal-600" />
+                    <span className="text-gray-700 group-hover:text-teal-600 font-medium">Browse Events</span>
+                  </motion.button>
+                </Link>
 
                 <motion.button
                   initial={{ opacity: 0, x: -20 }}
@@ -222,16 +304,67 @@ export function Navbar({ onNavigate }: NavbarProps) {
                   <span className="text-gray-700 group-hover:text-teal-600 font-medium">Features</span>
                 </motion.button>
 
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 }}
-                  onClick={() => handleNavigate('host')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
-                >
-                  <LayoutDashboard className="w-5 h-5 text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Host Dashboard</span>
-                </motion.button>
+                {isAuthenticated && user && (
+                  <>
+                    <Link
+                      href={user.role === 'host' || user.role === 'admin' ? '/dashboard' : '/'}
+                      onClick={handleLinkClick}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                      >
+                        <LayoutDashboard className="w-5 h-5 text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">
+                          {user.role === 'host' || user.role === 'admin' ? 'Host Dashboard' : 'View Events'}
+                        </span>
+                      </motion.div>
+                    </Link>
+                    <Link
+                      href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'}
+                      onClick={handleLinkClick}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.27 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                      >
+                        <User className="w-5 h-5 text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">Profile</span>
+                      </motion.div>
+                    </Link>
+                    <Link
+                      href="/friends"
+                      onClick={handleLinkClick}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.28 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                      >
+                        <Users className="w-5 h-5 text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">Friends</span>
+                      </motion.div>
+                    </Link>
+                  </>
+                )}
+                {!isAuthenticated && (
+                  <Link href="/host-login" onClick={handleLinkClick}>
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.25 }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                    >
+                      <LayoutDashboard className="w-5 h-5 text-teal-600" />
+                      <span className="text-gray-700 group-hover:text-teal-600 font-medium">Host Dashboard</span>
+                    </motion.div>
+                  </Link>
+                )}
               </div>
 
               {/* Divider */}
@@ -241,27 +374,73 @@ export function Navbar({ onNavigate }: NavbarProps) {
 
               {/* Auth Actions */}
               <div className="p-6 space-y-3">
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={() => handleNavigate('login')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-teal-400 transition-all group"
-                >
-                  <LogIn className="w-5 h-5 text-gray-600 group-hover:text-teal-600" />
-                  <span className="text-gray-700 group-hover:text-teal-600 font-medium">Login</span>
-                </motion.button>
+                {isAuthenticated && user ? (
+                  <>
+                    <Link
+                      href={user.role === 'host' || user.role === 'admin' ? '/host-profile' : '/profile'}
+                      onClick={handleLinkClick}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 hover:border-teal-400 transition-all cursor-pointer"
+                      >
+                        {user.profileImage ? (
+                          <img
+                            src={user.profileImage}
+                            alt={user.fullName}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-gray-900 font-medium text-sm">{user.fullName}</p>
+                          <p className="text-gray-600 text-xs">{user.email}</p>
+                        </div>
+                      </motion.div>
+                    </Link>
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 }}
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-red-200 hover:border-red-400 bg-red-50 hover:bg-red-100 transition-all group"
+                    >
+                      <LogOut className="w-5 h-5 text-red-600 group-hover:text-red-700" />
+                      <span className="text-red-700 group-hover:text-red-800 font-medium">Logout</span>
+                    </motion.button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={handleLinkClick}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-teal-400 transition-all group"
+                      >
+                        <LogIn className="w-5 h-5 text-gray-600 group-hover:text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">Login</span>
+                      </motion.div>
+                    </Link>
 
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
-                  onClick={() => handleNavigate('login-choice')}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  <span className="font-semibold">Join us</span>
-                </motion.button>
+                    <Link href="/login-choice" onClick={handleLinkClick}>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35 }}
+                        className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-4 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                      >
+                        <UserPlus className="w-5 h-5" />
+                        <span className="font-semibold">Join us</span>
+                      </motion.div>
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           </>

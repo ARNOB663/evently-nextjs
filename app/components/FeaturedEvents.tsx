@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import Link from 'next/link';
 import { Calendar, MapPin, ArrowRight, Users, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -95,84 +96,88 @@ export function FeaturedEvents({ onNavigate }: FeaturedEventsProps) {
         <div className="flex justify-center">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 max-w-fit mx-auto">
             {featuredEvents.map((event, index) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
-              className="group cursor-pointer"
-            >
-              <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100">
-                {/* Image */}
-                <div className="relative h-48 sm:h-56 overflow-hidden">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.4 }}
-                    className="w-full h-full"
-                  >
-                    <ImageWithFallback
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </motion.div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-white/95 backdrop-blur-sm text-gray-900 border-0 shadow-sm">
-                      {event.category}
-                    </Badge>
-                  </div>
-                  {event.price === 'free' && (
-                    <div className="absolute top-4 right-4">
-                      <Badge className="bg-teal-500 text-white border-0 shadow-sm">
-                        Free
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="p-5 sm:p-6 space-y-3 sm:space-y-4">
-                  <h3 className="text-lg sm:text-xl text-gray-900 line-clamp-2 group-hover:text-teal-600 transition-colors font-semibold">
-                    {event.title}
-                  </h3>
-
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{event.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{event.attendees.toLocaleString()} interested</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-100">
-                    {event.price !== 'free' && (
-                      <div className="text-xl sm:text-2xl font-bold text-indigo-950">
-                        ${event.price}
+              <motion.div
+                key={event.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ y: -8 }}
+                className="group"
+              >
+                <Link href={`/events/${event.id}`} className="block">
+                  <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-100 cursor-pointer">
+                    {/* Image */}
+                    <div className="relative h-48 sm:h-56 overflow-hidden">
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.4 }}
+                        className="w-full h-full"
+                      >
+                        <ImageWithFallback
+                          src={event.image}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </motion.div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-white/95 backdrop-blur-sm text-gray-900 border-0 shadow-sm">
+                          {event.category}
+                        </Badge>
                       </div>
-                    )}
-                    <Button
-                      size="sm"
-                      className="ml-auto bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-full group/btn shadow-md text-xs sm:text-sm"
-                      onClick={() => onNavigate?.('event-details', event.id.toString())}
-                    >
-                      Book now
-                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
-                    </Button>
+                      {event.price === 'free' && (
+                        <div className="absolute top-4 right-4">
+                          <Badge className="bg-teal-500 text-white border-0 shadow-sm">
+                            Free
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-5 sm:p-6 space-y-3 sm:space-y-4">
+                      <h3 className="text-lg sm:text-xl text-gray-900 line-clamp-2 group-hover:text-teal-600 transition-colors font-semibold">
+                        {event.title}
+                      </h3>
+
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{event.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{event.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="truncate">{event.attendees.toLocaleString()} interested</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-100">
+                        {event.price !== 'free' && (
+                          <div className="text-xl sm:text-2xl font-bold text-indigo-950">
+                            ${event.price}
+                          </div>
+                        )}
+                        <div className="ml-auto">
+                          <Button
+                            size="sm"
+                            className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-full group/btn shadow-md text-xs sm:text-sm"
+                            type="button"
+                          >
+                            Book now
+                            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </div>
 
@@ -184,14 +189,15 @@ export function FeaturedEvents({ onNavigate }: FeaturedEventsProps) {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center mt-12 sm:mt-16"
         >
-          <Button
-            size="lg"
-            className="px-6 sm:px-8 md:px-10 py-4 sm:py-5 md:py-6 rounded-full border-2 border-indigo-200 bg-white text-indigo-950 hover:bg-indigo-50 shadow-md hover:shadow-lg transition-all duration-300 group text-sm sm:text-base"
-            onClick={() => onNavigate?.('events')}
-          >
-            Explore all events
-            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-          </Button>
+          <Link href="/events">
+            <Button
+              size="lg"
+              className="px-6 sm:px-8 md:px-10 py-4 sm:py-5 md:py-6 rounded-full border-2 border-indigo-200 bg-white text-indigo-950 hover:bg-indigo-50 shadow-md hover:shadow-lg transition-all duration-300 group text-sm sm:text-base"
+            >
+              Explore all events
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
         </motion.div>
       </div>
     </section>
