@@ -37,6 +37,8 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { FriendRequestButton } from './FriendRequestButton';
+import { ReviewsList } from './ReviewsList';
+import { ReportButton } from './ReportButton';
 import Link from 'next/link';
 
 interface ProfileStats {
@@ -101,11 +103,14 @@ export function EnhancedHostProfile() {
 
   const fetchStats = async () => {
     try {
-      const [friendsRes, eventsRes] = await Promise.all([
+      const [friendsRes, eventsRes, reviewsRes] = await Promise.all([
         fetch(`/api/users/${profileUserId}/friends`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`/api/users/${profileUserId}/events?type=all`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`/api/reviews?hostId=${profileUserId}&limit=1`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -124,6 +129,14 @@ export function EnhancedHostProfile() {
           ...prev,
           eventsHosted: eventsList.filter((e: any) => e.hostId._id === profileUserId).length,
           eventsJoined: eventsList.filter((e: any) => e.hostId._id !== profileUserId).length,
+        }));
+      }
+
+      if (reviewsRes.ok) {
+        const reviewsData = await reviewsRes.json();
+        setStats((prev) => ({
+          ...prev,
+          reviewsCount: reviewsData.pagination?.total || 0,
         }));
       }
     } catch (error) {
@@ -310,12 +323,9 @@ export function EnhancedHostProfile() {
                       </Button>
                     </Link>
                   )}
-                  <Button variant="ghost" size="icon">
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
+                  {!isOwnProfile && (
+                    <ReportButton type="user" reportedUserId={profileUserId} />
+                  )}
                 </div>
               </div>
 
@@ -420,7 +430,7 @@ export function EnhancedHostProfile() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <ReviewsTab reviewsCount={stats.reviewsCount} />
+                  <ReviewsTab profileUserId={profileUserId} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -782,13 +792,7 @@ function FriendsTab({ friends, friendsCount, profileUserId }: { friends: any[]; 
 }
 
 // Reviews Tab Component
-function ReviewsTab({ reviewsCount }: { reviewsCount: number }) {
-  return (
-    <div className="text-center py-12">
-      <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-      <p className="text-gray-600">No reviews yet</p>
-      <p className="text-sm text-gray-500 mt-2">Reviews will appear here once users start rating</p>
-    </div>
-  );
+function ReviewsTab({ profileUserId }: { profileUserId: string }) {
+  return <ReviewsList hostId={profileUserId} showEventName={true} />;
 }
 

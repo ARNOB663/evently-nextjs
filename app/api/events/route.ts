@@ -11,11 +11,16 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const eventType = searchParams.get('eventType');
+    const eventTypes = searchParams.getAll('eventTypes');
     const location = searchParams.get('location');
     const date = searchParams.get('date');
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
     const status = searchParams.get('status');
     const search = searchParams.get('search');
     const hostId = searchParams.get('hostId');
+    const priceMin = searchParams.get('priceMin');
+    const priceMax = searchParams.get('priceMax');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
@@ -23,14 +28,30 @@ export async function GET(req: NextRequest) {
     // Build query
     const query: any = {};
 
-    if (eventType) query.eventType = eventType;
+    if (eventTypes.length > 0) {
+      query.eventType = { $in: eventTypes };
+    } else if (eventType) {
+      query.eventType = eventType;
+    }
+    
     if (location) query.location = { $regex: location, $options: 'i' };
     if (status) query.status = status;
     if (hostId && mongoose.Types.ObjectId.isValid(hostId)) {
       query.hostId = new mongoose.Types.ObjectId(hostId);
     }
     
-    if (date) {
+    // Date range filter
+    if (dateFrom || dateTo) {
+      query.date = {};
+      if (dateFrom) {
+        query.date.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        const dateToObj = new Date(dateTo);
+        dateToObj.setHours(23, 59, 59, 999);
+        query.date.$lte = dateToObj;
+      }
+    } else if (date) {
       const dateObj = new Date(date);
       const nextDay = new Date(dateObj);
       nextDay.setDate(nextDay.getDate() + 1);
@@ -38,6 +59,17 @@ export async function GET(req: NextRequest) {
         $gte: dateObj,
         $lt: nextDay,
       };
+    }
+
+    // Price range filter
+    if (priceMin || priceMax) {
+      query.joiningFee = {};
+      if (priceMin) {
+        query.joiningFee.$gte = parseFloat(priceMin);
+      }
+      if (priceMax) {
+        query.joiningFee.$lte = parseFloat(priceMax);
+      }
     }
 
     if (search) {

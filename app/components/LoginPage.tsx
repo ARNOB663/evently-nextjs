@@ -4,8 +4,9 @@ import { motion } from 'motion/react';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 
 export function LoginPage() {
@@ -13,8 +14,55 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Show a friendly message after successful registration
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = window.localStorage.getItem('registrationSuccess');
+        if (raw) {
+          const parsed = JSON.parse(raw) as { email?: string; fullName?: string; message?: string };
+          setInfoMessage(parsed.message || 'Account created! Please verify your email before logging in.');
+          if (parsed.email) {
+            setEmail(parsed.email);
+          }
+          window.localStorage.removeItem('registrationSuccess');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to read registration success flag', e);
+    }
+  }, []);
+
+  // Handle social login callback (Google) via query params
+  useEffect(() => {
+    try {
+      const social = searchParams?.get('social');
+      const token = searchParams?.get('token');
+      const userParam = searchParams?.get('user');
+
+      if (social === 'google' && token && userParam) {
+        const decodedUser = JSON.parse(
+          Buffer.from(decodeURIComponent(userParam), 'base64').toString()
+        );
+
+        window.localStorage.setItem('token', token);
+        window.localStorage.setItem('user', JSON.stringify(decodedUser));
+
+        // Clean URL and redirect to home
+        router.replace('/');
+      }
+    } catch (e) {
+      console.error('Failed to handle social login callback', e);
+    }
+    // We intentionally only run this when searchParams changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -475,6 +523,17 @@ export function LoginPage() {
 
                 {/* Login Form */}
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Info / Success Message */}
+                  {infoMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-sm"
+                    >
+                      {infoMessage}
+                    </motion.div>
+                  )}
+
                   {/* Error Message */}
                   {error && (
                     <motion.div
@@ -543,9 +602,12 @@ export function LoginPage() {
                     transition={{ delay: 0.5, duration: 0.5 }}
                     className="flex justify-end"
                   >
-                    <a href="#" className="text-sm text-gray-700 hover:text-gray-900 transition-colors font-medium">
+                    <Link 
+                      href="/forgot-password" 
+                      className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-semibold hover:underline"
+                    >
                       Forgot Password?
-                    </a>
+                    </Link>
                   </motion.div>
 
                   {/* Submit Button */}
@@ -596,8 +658,12 @@ export function LoginPage() {
                   className="space-y-3"
                 >
                   <Button
+                    type="button"
                     variant="outline"
-                    className="w-full rounded-2xl border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all py-5 sm:py-6"
+                    className="w-full rounded-2xl border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all py-5 sm:py-6 flex items-center justify-center"
+                    onClick={() => {
+                      window.location.href = '/api/auth/google';
+                    }}
                   >
                     <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                       <path

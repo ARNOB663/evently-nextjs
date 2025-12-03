@@ -44,6 +44,14 @@ export interface IUser extends Document {
   // Online Status
   lastSeen?: Date;
   isOnline?: boolean;
+  // Admin fields
+  banned?: boolean;
+  bannedAt?: Date;
+  // Favorites
+  favoriteEvents?: mongoose.Types.ObjectId[];
+  // Email Verification
+  emailVerified?: boolean;
+  emailVerifiedAt?: Date;
 }
 
 const UserSchema: Schema = new Schema(
@@ -197,6 +205,29 @@ const UserSchema: Schema = new Schema(
     isOnline: {
       type: Boolean,
       default: false,
+    },
+    // Admin fields
+    banned: {
+      type: Boolean,
+      default: false,
+    },
+    bannedAt: {
+      type: Date,
+    },
+    // Favorites
+    favoriteEvents: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Event',
+      },
+    ],
+    // Email Verification
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerifiedAt: {
+      type: Date,
     },
   },
   {

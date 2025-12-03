@@ -4,6 +4,7 @@ import User from '@/lib/models/User';
 import FriendRequest from '@/lib/models/FriendRequest';
 import Notification from '@/lib/models/Notification';
 import { requireAuth } from '@/lib/middleware/auth';
+import { sendEmail, generateEmailTemplate } from '@/lib/utils/email';
 
 // POST /api/friends/request - Send friend request
 export async function POST(req: NextRequest) {
@@ -98,6 +99,17 @@ export async function POST(req: NextRequest) {
       relatedUser: user.userId,
       isRead: false,
     });
+
+    // Send email notification
+    if (targetUser.email) {
+      await sendEmail({
+        to: targetUser.email,
+        subject: 'New Friend Request',
+        html: generateEmailTemplate('friend_request', {
+          fromName: currentUser.fullName,
+        }),
+      });
+    }
 
     const populatedRequest = await FriendRequest.findById(friendRequest._id)
       .populate('from', 'fullName profileImage')
