@@ -41,8 +41,16 @@ export function ReviewsList({ hostId, eventId, showEventName = false }: ReviewsL
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  // Reset page to 1 when filter changes
+  useEffect(() => {
+    if (ratingFilter !== null) {
+      setPage(1);
+    }
+  }, [ratingFilter]);
+
   useEffect(() => {
     fetchReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hostId, eventId, ratingFilter, page]);
 
   const fetchReviews = async () => {
@@ -51,6 +59,7 @@ export function ReviewsList({ hostId, eventId, showEventName = false }: ReviewsL
       const params = new URLSearchParams();
       if (hostId) params.append('hostId', hostId);
       if (eventId) params.append('eventId', eventId);
+      if (ratingFilter !== null) params.append('rating', ratingFilter.toString());
       params.append('page', page.toString());
       params.append('limit', '10');
 
@@ -137,9 +146,7 @@ export function ReviewsList({ hostId, eventId, showEventName = false }: ReviewsL
 
       {/* Reviews List */}
       <div className="space-y-4">
-        {reviews
-          .filter((review) => ratingFilter === null || review.rating === ratingFilter)
-          .map((review) => (
+        {reviews.map((review) => (
             <motion.div
               key={review._id}
               initial={{ opacity: 0, y: 20 }}

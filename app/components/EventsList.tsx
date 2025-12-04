@@ -218,9 +218,9 @@ export function EventsList() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="border-t pt-4 mt-4 space-y-4"
+                className="border-t pt-4 mt-4 space-y-4 max-h-[70vh] overflow-y-auto"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <div>
                     <label className="text-sm font-semibold text-gray-700 mb-2 block">
                       Event Type
@@ -363,7 +363,7 @@ export function EventsList() {
                 )}
               </Card>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {events.map((event, index) => (
                   <Link key={event._id} href={`/events/${event._id}`}>
                     <motion.div
@@ -387,28 +387,28 @@ export function EventsList() {
                               <Calendar className="w-16 h-16 text-white/50" />
                             </div>
                           )}
-                          <div className="absolute top-4 right-4">
-                            <Badge className={getStatusColor(event.status)}>
+                          <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                            <Badge className={`${getStatusColor(event.status)} text-xs`}>
                               {event.status}
                             </Badge>
                           </div>
-                          <div className="absolute top-4 left-4">
-                            <Badge className="bg-white/95 backdrop-blur-sm text-gray-900 border-0">
+                          <div className="absolute top-2 left-2 sm:top-4 sm:left-4">
+                            <Badge className="bg-white/95 backdrop-blur-sm text-gray-900 border-0 text-xs">
                               {event.eventType}
                             </Badge>
                           </div>
                         </div>
 
                         {/* Event Content */}
-                        <div className="p-5 sm:p-6 flex-1 flex flex-col">
-                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-teal-600 transition-colors">
+                        <div className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col">
+                          <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 sm:mb-3 line-clamp-2 group-hover:text-teal-600 transition-colors">
                             {event.eventName}
                           </h3>
 
-                          <div className="space-y-2 mb-4 flex-1">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <span>
+                          <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1">
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                              <span className="truncate">
                                 {new Date(event.date).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
@@ -416,39 +416,39 @@ export function EventsList() {
                                 })}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
                               <span>{event.time}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <span className="line-clamp-1">{event.location}</span>
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                              <span className="line-clamp-1 truncate">{event.location}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <span>
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                              <span className="truncate">
                                 {event.currentParticipants}/{event.maxParticipants} participants
                               </span>
                             </div>
                             {event.joiningFee > 0 && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <DollarSign className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
                                 <span>${event.joiningFee} fee</span>
                               </div>
                             )}
                           </div>
 
-                          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
                             {event.description}
                           </p>
 
-                          <div className="flex items-center justify-between pt-4 border-t">
+                          <div className="flex items-center justify-between pt-3 sm:pt-4 border-t">
                             {event.joiningFee > 0 ? (
-                              <div className="text-xl font-bold text-gray-900">
+                              <div className="text-lg sm:text-xl font-bold text-gray-900">
                                 ${event.joiningFee}
                               </div>
                             ) : (
-                              <Badge className="bg-teal-100 text-teal-800 border-teal-200">
+                              <Badge className="bg-teal-100 text-teal-800 border-teal-200 text-xs">
                                 Free
                               </Badge>
                             )}

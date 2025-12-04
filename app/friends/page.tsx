@@ -241,30 +241,32 @@ export default function FriendsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-            <Users className="w-8 h-8 text-teal-600" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-teal-600" />
             Friends
           </h1>
-          <p className="text-gray-600">Manage your friends, search, and requests all in one place</p>
+          <p className="text-sm sm:text-base text-gray-600">Manage your friends, search, and requests all in one place</p>
         </motion.div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'requests' | 'search')} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="all" className="flex items-center gap-2">
-              <UserCheck className="w-4 h-4" />
-              All Friends ({friends.length})
+          <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6">
+            <TabsTrigger value="all" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <UserCheck className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">All Friends</span>
+              <span className="sm:hidden">Friends</span>
+              <span className="hidden sm:inline">({friends.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="requests" className="flex items-center gap-2 relative">
-              <Inbox className="w-4 h-4" />
-              Requests
+            <TabsTrigger value="requests" className="flex items-center gap-1 sm:gap-2 relative text-xs sm:text-sm">
+              <Inbox className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Requests</span>
               {totalRequests > 0 && (
-                <Badge className="ml-1 bg-teal-600 text-white">{totalRequests}</Badge>
+                <Badge className="ml-1 bg-teal-600 text-white text-xs">{totalRequests}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="search" className="flex items-center gap-2">
-              <Search className="w-4 h-4" />
-              Search
+            <TabsTrigger value="search" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Search className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Search</span>
             </TabsTrigger>
           </TabsList>
 
@@ -287,7 +289,7 @@ export default function FriendsPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                 {friends.map((friend) => (
                   <motion.div
                     key={friend._id}
@@ -297,20 +299,20 @@ export default function FriendsPage() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link href={friend.role === 'host' ? `/host-profile?userId=${friend._id}` : `/profile?userId=${friend._id}`}>
-                      <Card className="p-4 hover:shadow-lg transition-shadow duration-200 cursor-pointer">
+                      <Card className="p-3 sm:p-4 hover:shadow-lg transition-shadow duration-200 cursor-pointer">
                         <div className="flex flex-col items-center text-center">
                           {friend.profileImage ? (
                             <ImageWithFallback
                               src={friend.profileImage}
                               alt={friend.fullName}
-                              className="w-20 h-20 rounded-full object-cover border-2 border-teal-100 mb-3"
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-teal-100 mb-2 sm:mb-3"
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center border-2 border-teal-100 mb-3">
-                              <User className="w-10 h-10 text-teal-600" />
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-teal-100 flex items-center justify-center border-2 border-teal-100 mb-2 sm:mb-3">
+                              <User className="w-8 h-8 sm:w-10 sm:h-10 text-teal-600" />
                             </div>
                           )}
-                          <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate w-full">
+                          <h3 className="font-semibold text-gray-900 text-xs sm:text-sm mb-1 truncate w-full">
                             {friend.fullName}
                           </h3>
                           {friend.location && (
@@ -335,7 +337,7 @@ export default function FriendsPage() {
 
           {/* Requests Tab */}
           <TabsContent value="requests" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Received Requests */}
               <Card>
                 <CardContent className="p-6">

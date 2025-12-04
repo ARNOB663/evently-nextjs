@@ -9,6 +9,7 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
+import Link from 'next/link';
 
 interface Comment {
   _id: string;
@@ -92,8 +93,14 @@ export function EventComments({ eventId }: EventCommentsProps) {
       if (response.ok) {
         toast.success('Comment posted!');
         setContent('');
+        // Reset to page 1 and clear comments before fetching
+        setComments([]);
         setPage(1);
-        fetchComments();
+        // Fetch will be triggered by useEffect when page changes
+        // But we also fetch immediately to show the new comment
+        setTimeout(() => {
+          fetchComments();
+        }, 100);
       } else {
         toast.error(data.error || 'Failed to post comment');
       }
@@ -131,8 +138,8 @@ export function EventComments({ eventId }: EventCommentsProps) {
   return (
     <div>
       {/* Comment Form */}
-      {user && token && (
-        <Card className="p-4 mb-6">
+      <Card className="p-4 mb-6">
+        {user && token ? (
           <form onSubmit={handleSubmit} className="flex gap-3">
             <Avatar className="w-10 h-10 flex-shrink-0">
               <AvatarImage src={user.profileImage} />
@@ -148,11 +155,16 @@ export function EventComments({ eventId }: EventCommentsProps) {
                 rows={2}
                 maxLength={1000}
                 disabled={submitting}
-                className="resize-none mb-2"
+                className="resize-none mb-2 text-gray-900"
               />
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-500">{content.length}/1000</p>
-                <Button type="submit" disabled={submitting || !content.trim()} size="sm">
+                <Button 
+                  type="submit" 
+                  disabled={submitting || !content.trim()} 
+                  size="sm"
+                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                >
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -161,15 +173,22 @@ export function EventComments({ eventId }: EventCommentsProps) {
                   ) : (
                     <>
                       <Send className="w-4 h-4 mr-2" />
-                      Post
+                      Post Comment
                     </>
                   )}
                 </Button>
               </div>
             </div>
           </form>
-        </Card>
-      )}
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-gray-600 mb-3">Please log in to post a comment</p>
+            <Button asChild className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white">
+              <Link href="/login">Log In</Link>
+            </Button>
+          </div>
+        )}
+      </Card>
 
       {/* Comments List */}
       {loading && comments.length === 0 ? (

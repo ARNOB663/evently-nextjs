@@ -415,10 +415,10 @@ function MessagesPageInner() {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)]">
           {/* Conversations List */}
-          <div className="w-full lg:w-80 flex-shrink-0">
+          <div className={`w-full ${selectedConversation ? 'hidden lg:block lg:w-80' : 'lg:w-80'} flex-shrink-0`}>
             <Card className="h-full flex flex-col">
               <CardContent className="p-0 flex flex-col h-full">
                 {/* Header */}
@@ -491,16 +491,17 @@ function MessagesPageInner() {
           </div>
 
           {/* Chat Area */}
-          <div className="flex-1 flex flex-col">
+          <div className={`flex-1 flex flex-col ${selectedConversation ? 'flex' : 'hidden lg:flex'}`}>
             {selectedConversation ? (
               <>
                 {/* Chat Header */}
-                <Card className="mb-6">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
+                <Card className="mb-4 sm:mb-6">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <button
                         onClick={() => setSelectedConversation(null)}
-                        className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+                        className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        aria-label="Back to conversations"
                       >
                         <ArrowLeft className="w-5 h-5" />
                       </button>

@@ -33,6 +33,7 @@ import { EventComments } from './EventComments';
 import { EventPhotos } from './EventPhotos';
 import { ReportButton } from './ReportButton';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 interface EventDetailProps {
   eventId: string;
@@ -414,32 +415,32 @@ export function EventDetail({ eventId }: EventDetailProps) {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Event Image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="relative overflow-hidden rounded-2xl shadow-lg bg-gray-100"
+              className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg bg-gray-100"
             >
               {event.image ? (
                 <ImageWithFallback
                   src={event.image}
                   alt={event.eventName}
-                  className="w-full h-[400px] sm:h-[500px] object-cover"
+                  className="w-full h-[250px] sm:h-[400px] md:h-[500px] object-cover"
                 />
               ) : (
-                <div className="w-full h-[400px] sm:h-[500px] flex items-center justify-center bg-gradient-to-br from-teal-100 to-cyan-100">
+                <div className="w-full h-[250px] sm:h-[400px] md:h-[500px] flex items-center justify-center bg-gradient-to-br from-teal-100 to-cyan-100">
                   <div className="text-center">
                     <Tag className="w-16 h-16 text-teal-400 mx-auto mb-4" />
                     <p className="text-gray-600 font-medium">No image available</p>
                   </div>
                 </div>
               )}
-              <div className="absolute top-4 right-4 flex items-center gap-2">
-                <Badge className={getStatusColor(event.status)}>{event.status}</Badge>
+              <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex items-center gap-2">
+                <Badge className={`${getStatusColor(event.status)} text-xs sm:text-sm`}>{event.status}</Badge>
                 {isAuthenticated && user && !isHost() && (
                   <ReportButton type="event" reportedEventId={eventId} />
                 )}
@@ -452,23 +453,23 @@ export function EventDetail({ eventId }: EventDetailProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="p-6 sm:p-8">
-                <div className="mb-6">
-                  <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+              <Card className="p-4 sm:p-6 md:p-8">
+                <div className="mb-4 sm:mb-6">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
                     {event.eventName}
                   </h1>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Tag className="w-5 h-5 text-gray-500" />
-                    <span className="text-lg text-gray-600">{event.eventType}</span>
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                    <span className="text-base sm:text-lg text-gray-600">{event.eventType}</span>
                   </div>
                 </div>
 
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-teal-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-500">Date</p>
-                      <p className="text-gray-900 font-medium">
+                <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-500">Date</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-medium break-words">
                         {new Date(event.date).toLocaleDateString('en-US', {
                           weekday: 'long',
                           year: 'numeric',
@@ -479,19 +480,19 @@ export function EventDetail({ eventId }: EventDetailProps) {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-teal-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-500">Time</p>
-                      <p className="text-gray-900 font-medium">{event.time}</p>
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-500">Time</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-medium">{event.time}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-teal-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-gray-500">Location</p>
-                      <p className="text-gray-900 font-medium">{event.location}</p>
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-500">Location</p>
+                      <p className="text-sm sm:text-base text-gray-900 font-medium break-words">{event.location}</p>
                     </div>
                   </div>
 
@@ -517,9 +518,9 @@ export function EventDetail({ eventId }: EventDetailProps) {
                 </div>
 
                 {/* Description */}
-                <div className="border-t pt-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-3">About this event</h2>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                <div className="border-t pt-4 sm:pt-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">About this event</h2>
+                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
                     {event.description}
                   </p>
                 </div>
@@ -533,17 +534,17 @@ export function EventDetail({ eventId }: EventDetailProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <Card className="p-6 sm:p-8">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  <Card className="p-4 sm:p-6 md:p-8">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
                       Participants ({event.participants.length})
                     </h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                       {event.participants.map((participant) => (
                         <div
                           key={participant._id}
-                          className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-lg"
+                          className="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-gray-50 rounded-lg"
                         >
-                          <Avatar className="w-12 h-12">
+                          <Avatar className="w-10 h-10 sm:w-12 sm:h-12">
                             <AvatarImage src={participant.profileImage} />
                             <AvatarFallback className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white">
                               {participant.fullName.charAt(0)}
@@ -566,17 +567,15 @@ export function EventDetail({ eventId }: EventDetailProps) {
                 transition={{ delay: 0.5 }}
                 key={refreshReviews}
               >
-                <Card className="p-6 sm:p-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
-                    Reviews
-                  </h2>
+              <Card className="p-4 sm:p-6 md:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center gap-2">
+                  <Star className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 fill-yellow-400" />
+                  Reviews
+                </h2>
 
-                  {/* Review Form - Only show if user is a participant and not the host */}
-                  {isAuthenticated &&
-                    user &&
-                    isParticipant() &&
-                    !isHost() && (
+                  {/* Review Form */}
+                  {isAuthenticated && user ? (
+                    isParticipant() && !isHost() ? (
                       <div className="mb-8">
                         <ReviewForm
                           hostId={event.hostId._id}
@@ -588,7 +587,29 @@ export function EventDetail({ eventId }: EventDetailProps) {
                           }}
                         />
                       </div>
-                    )}
+                    ) : !isParticipant() ? (
+                      <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-blue-800 text-sm">
+                          You need to join this event to leave a review.
+                        </p>
+                      </div>
+                    ) : isHost() ? (
+                      <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p className="text-gray-600 text-sm">
+                          You cannot review your own event.
+                        </p>
+                      </div>
+                    ) : null
+                  ) : (
+                    <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                      <p className="text-blue-800 text-sm mb-3">
+                        Please log in to leave a review.
+                      </p>
+                      <Button asChild className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white">
+                        <Link href="/login">Log In</Link>
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Reviews List */}
                   <ReviewsList eventId={eventId} showEventName={false} />
@@ -601,8 +622,8 @@ export function EventDetail({ eventId }: EventDetailProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <Card className="p-6 sm:p-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Discussion</h2>
+              <Card className="p-4 sm:p-6 md:p-8">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Discussion</h2>
                 <EventComments eventId={eventId} />
               </Card>
             </motion.div>
@@ -633,10 +654,10 @@ export function EventDetail({ eventId }: EventDetailProps) {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="sticky top-28 space-y-6"
+              className="sticky top-24 sm:top-28 space-y-4 sm:space-y-6"
             >
               {/* Action Card */}
-              <Card className="p-6">
+              <Card className="p-4 sm:p-6">
                 {event.joiningFee > 0 && (
                   <div className="mb-6">
                     <p className="text-sm text-gray-500 mb-1">Price</p>
