@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
     const hostId = searchParams.get('hostId');
     const priceMin = searchParams.get('priceMin');
     const priceMax = searchParams.get('priceMax');
+    const sortBy = searchParams.get('sortBy') || 'date';
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
@@ -81,11 +83,32 @@ export async function GET(req: NextRequest) {
       ];
     }
 
+    // Build sort object
+    const sortOptions: any = {};
+    const order = sortOrder === 'desc' ? -1 : 1;
+    
+    switch (sortBy) {
+      case 'date':
+        sortOptions.date = order;
+        break;
+      case 'price':
+        sortOptions.joiningFee = order;
+        break;
+      case 'popularity':
+        sortOptions.currentParticipants = -1; // Always desc for popularity
+        break;
+      case 'created':
+        sortOptions.createdAt = order;
+        break;
+      default:
+        sortOptions.date = 1; // Default: soonest first
+    }
+
     // Get events
     const events = await Event.find(query)
       .populate('hostId', 'fullName profileImage averageRating')
       .populate('participants', 'fullName profileImage')
-      .sort({ createdAt: -1 })
+      .sort(sortOptions)
       .skip(skip)
       .limit(limit);
 

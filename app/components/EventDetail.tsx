@@ -33,6 +33,7 @@ import { EventComments } from './EventComments';
 import { EventPhotos } from './EventPhotos';
 import { ReportButton } from './ReportButton';
 import { Skeleton } from './ui/skeleton';
+import { Breadcrumbs } from './ui/breadcrumbs';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -447,6 +448,20 @@ export function EventDetail({ eventId }: EventDetailProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-24 sm:pt-28 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
+        {/* Breadcrumbs */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mb-4"
+        >
+          <Breadcrumbs 
+            items={[
+              { label: 'Events', href: '/events' },
+              { label: event.eventName }
+            ]} 
+          />
+        </motion.div>
+
         {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}

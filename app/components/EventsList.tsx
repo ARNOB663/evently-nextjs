@@ -16,6 +16,11 @@ import {
   Tag,
   Clock,
   ArrowRight,
+  ArrowUpDown,
+  Timer,
+  Flame,
+  Grid3X3,
+  Map,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -23,6 +28,21 @@ import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Skeleton } from './ui/skeleton';
+import { Breadcrumbs } from './ui/breadcrumbs';
+import dynamic from 'next/dynamic';
+
+// Dynamically import EventsMap to avoid SSR issues with Leaflet
+const EventsMap = dynamic(() => import('./EventsMap').then(mod => ({ default: mod.EventsMap })), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[500px] bg-gray-100 rounded-xl flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-2"></div>
+        <p className="text-gray-500 text-sm">Loading map...</p>
+      </div>
+    </div>
+  ),
+});
 
 interface Event {
   _id: string;
@@ -70,9 +90,99 @@ export function EventsList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState(searchParams?.get('search') || '');
+  const [sortBy, setSortBy] = useState(searchParams?.get('sortBy') || 'date');
+  const [sortOrder, setSortOrder] = useState(searchParams?.get('sortOrder') || 'asc');
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   const eventTypes = ['Conference', 'Workshop', 'Meetup', 'Concert', 'Festival', 'Sports', 'Food', 'Music', 'Tech', 'Other'];
   const statuses = ['open', 'full', 'cancelled', 'completed'];
+  
+  const sortOptions = [
+    { value: 'date-asc', label: 'Date (Soonest)' },
+    { value: 'date-desc', label: 'Date (Latest)' },
+    { value: 'price-asc', label: 'Price (Low to High)' },
+    { value: 'price-desc', label: 'Price (High to Low)' },
+    { value: 'popularity-desc', label: 'Most Popular' },
+    { value: 'created-desc', label: 'Newest First' },
+  ];
+
+  // Helper function to get countdown text
+  const getCountdown = (eventDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(eventDate);
+    date.setHours(0, 0, 0, 0);
+    const diffTime = date.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return { text: 'Ended', color: 'bg-gray-500' };
+    if (diffDays === 0) return { text: 'Today', color: 'bg-red-500' };
+    if (diffDays === 1) return { text: 'Tomorrow', color: 'bg-orange-500' };
+    if (diffDays <= 7) return { text: `In ${diffDays} days`, color: 'bg-yellow-500' };
+    if (diffDays <= 30) return { text: `In ${diffDays} days`, color: 'bg-blue-500' };
+    return { text: `In ${diffDays} days`, color: 'bg-gray-400' };
+  };
+
+  // Helper function to get capacity info
+  const getCapacityInfo = (current: number, max: number) => {
+    const percentage = (current / max) * 100;
+    let color = 'bg-green-500';
+    let status = '';
+    
+    if (percentage >= 100) {
+      color = 'bg-red-500';
+      status = 'Sold Out';
+    } else if (percentage >= 80) {
+      color = 'bg-orange-500';
+      status = 'Almost Full';
+    } else if (percentage >= 50) {
+      color = 'bg-yellow-500';
+    }
+    
+    return { percentage: Math.min(percentage, 100), color, status };
+  };
+
+  // Quick filter handlers
+  const applyQuickFilter = (filter: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (filter) {
+      case 'thisWeekend':
+        const dayOfWeek = today.getDay();
+        const saturday = new Date(today);
+        saturday.setDate(today.getDate() + (6 - dayOfWeek));
+        const sunday = new Date(saturday);
+        sunday.setDate(saturday.getDate() + 1);
+        setDateFrom(saturday.toISOString().split('T')[0]);
+        setDateTo(sunday.toISOString().split('T')[0]);
+        break;
+      case 'thisWeek':
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        setDateFrom(weekStart.toISOString().split('T')[0]);
+        setDateTo(weekEnd.toISOString().split('T')[0]);
+        break;
+      case 'free':
+        setPriceMin('0');
+        setPriceMax('0');
+        break;
+      case 'paid':
+        setPriceMin('0.01');
+        setPriceMax('');
+        break;
+    }
+    setPage(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    const [newSortBy, newSortOrder] = value.split('-');
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setPage(1);
+  };
 
   // Update URL with current filters
   const updateURL = useCallback((filters: any) => {
@@ -85,6 +195,8 @@ export function EventsList() {
     if (filters.dateTo) params.set('dateTo', filters.dateTo);
     if (filters.priceMin) params.set('priceMin', filters.priceMin);
     if (filters.priceMax) params.set('priceMax', filters.priceMax);
+    if (filters.sortBy && filters.sortBy !== 'date') params.set('sortBy', filters.sortBy);
+    if (filters.sortOrder && filters.sortOrder !== 'asc') params.set('sortOrder', filters.sortOrder);
     filters.eventTypes?.forEach((type: string) => params.append('eventTypes', type));
     if (filters.page > 1) params.set('page', filters.page.toString());
     
@@ -115,10 +227,12 @@ export function EventsList() {
       dateTo,
       priceMin,
       priceMax,
+      sortBy,
+      sortOrder,
       eventTypes: selectedEventTypes,
       page,
     });
-  }, [page, searchQuery, eventTypeFilter, locationFilter, statusFilter, dateFrom, dateTo, priceMin, priceMax, selectedEventTypes]);
+  }, [page, searchQuery, eventTypeFilter, locationFilter, statusFilter, dateFrom, dateTo, priceMin, priceMax, selectedEventTypes, sortBy, sortOrder]);
 
   const fetchEvents = async () => {
     try {
@@ -141,6 +255,8 @@ export function EventsList() {
       if (selectedEventTypes.length > 0) {
         selectedEventTypes.forEach((type) => params.append('eventTypes', type));
       }
+      if (sortBy) params.append('sortBy', sortBy);
+      if (sortOrder) params.append('sortOrder', sortOrder);
 
       const response = await fetch(`/api/events?${params.toString()}`);
       const data = await response.json();
@@ -215,6 +331,8 @@ export function EventsList() {
     setPriceMax('');
     setSelectedEventTypes([]);
     setDatePreset('');
+    setSortBy('date');
+    setSortOrder('asc');
     setPage(1);
     router.replace('/events', { scroll: false });
   };
@@ -234,7 +352,9 @@ export function EventsList() {
     dateTo ||
     priceMin ||
     priceMax ||
-    selectedEventTypes.length > 0;
+    selectedEventTypes.length > 0 ||
+    sortBy !== 'date' ||
+    sortOrder !== 'asc';
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -254,16 +374,79 @@ export function EventsList() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-24 sm:pt-28 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Breadcrumbs */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mb-4"
+        >
+          <Breadcrumbs items={[{ label: 'Events' }]} />
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 sm:mb-12"
+          className="mb-6 sm:mb-8"
         >
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
             Browse Events
           </h1>
           <p className="text-gray-600 text-base sm:text-lg">Discover amazing events happening around you</p>
+        </motion.div>
+
+        {/* Quick Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-4 flex flex-wrap gap-2"
+        >
+          <Button
+            variant={dateFrom && dateTo ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => applyQuickFilter('thisWeekend')}
+            className="rounded-full text-xs sm:text-sm"
+          >
+            <Calendar className="w-3 h-3 mr-1" />
+            This Weekend
+          </Button>
+          <Button
+            variant={dateFrom && dateTo ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => applyQuickFilter('thisWeek')}
+            className="rounded-full text-xs sm:text-sm"
+          >
+            <Clock className="w-3 h-3 mr-1" />
+            This Week
+          </Button>
+          <Button
+            variant={priceMin === '0' && priceMax === '0' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => applyQuickFilter('free')}
+            className="rounded-full text-xs sm:text-sm"
+          >
+            <Tag className="w-3 h-3 mr-1" />
+            Free Events
+          </Button>
+          <Button
+            variant={priceMin === '0.01' && priceMax === '' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => applyQuickFilter('paid')}
+            className="rounded-full text-xs sm:text-sm"
+          >
+            <DollarSign className="w-3 h-3 mr-1" />
+            Paid Events
+          </Button>
+          <Button
+            variant={sortBy === 'popularity' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleSortChange('popularity-desc')}
+            className="rounded-full text-xs sm:text-sm"
+          >
+            <Flame className="w-3 h-3 mr-1" />
+            Popular
+          </Button>
         </motion.div>
 
         {/* Search and Filters */}
@@ -304,6 +487,42 @@ export function EventsList() {
                 </Button>
               </div>
             </form>
+
+            {/* Sort and View Options */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                <select
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className={viewMode === 'grid' ? 'bg-white shadow-sm' : ''}
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'map' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('map')}
+                  className={viewMode === 'map' ? 'bg-white shadow-sm' : ''}
+                >
+                  <Map className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
 
             {/* Filters Panel */}
             {showFilters && (
@@ -579,8 +798,41 @@ export function EventsList() {
           </Card>
         )}
 
+        {/* Map View */}
+        {!loading && !error && viewMode === 'map' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-8"
+          >
+            {events.length > 0 ? (
+              <EventsMap events={events} />
+            ) : (
+              <Card className="p-12 sm:p-16 text-center">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center">
+                  <Map className="w-10 h-10 sm:w-12 sm:h-12 text-teal-600" />
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">No events to show on map</h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto text-base sm:text-lg">
+                  {hasActiveFilters
+                    ? 'Try adjusting your filters to see more events.'
+                    : 'No events are available at the moment. Check back later!'}
+                </p>
+                {hasActiveFilters && (
+                  <Button 
+                    onClick={clearFilters} 
+                    className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </Card>
+            )}
+          </motion.div>
+        )}
+
         {/* Events Grid */}
-        {!loading && !error && (
+        {!loading && !error && viewMode === 'grid' && (
           <>
             {events.length === 0 ? (
               <motion.div
@@ -634,15 +886,38 @@ export function EventsList() {
                               <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-white/50" />
                             </div>
                           )}
-                          <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                          {/* Status Badge */}
+                          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col gap-1">
                             <Badge className={`${getStatusColor(event.status)} text-xs`}>
                               {event.status}
                             </Badge>
+                            {/* Capacity Status */}
+                            {(() => {
+                              const capacity = getCapacityInfo(event.currentParticipants, event.maxParticipants);
+                              return capacity.status ? (
+                                <Badge className={`${capacity.status === 'Sold Out' ? 'bg-red-500' : 'bg-orange-500'} text-white text-xs`}>
+                                  {capacity.status}
+                                </Badge>
+                              ) : null;
+                            })()}
                           </div>
+                          {/* Event Type */}
                           <div className="absolute top-2 left-2 sm:top-4 sm:left-4">
                             <Badge className="bg-white/95 backdrop-blur-sm text-gray-900 border-0 text-xs">
                               {event.eventType}
                             </Badge>
+                          </div>
+                          {/* Countdown Badge */}
+                          <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4">
+                            {(() => {
+                              const countdown = getCountdown(event.date);
+                              return (
+                                <Badge className={`${countdown.color} text-white text-xs flex items-center gap-1`}>
+                                  <Timer className="w-3 h-3" />
+                                  {countdown.text}
+                                </Badge>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -674,8 +949,22 @@ export function EventsList() {
                             <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
                               <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
                               <span className="truncate">
-                                {event.currentParticipants}/{event.maxParticipants} participants
+                                {event.currentParticipants}/{event.maxParticipants} spots
                               </span>
+                            </div>
+                            {/* Capacity Progress Bar */}
+                            <div className="mt-1">
+                              {(() => {
+                                const capacity = getCapacityInfo(event.currentParticipants, event.maxParticipants);
+                                return (
+                                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div
+                                      className={`${capacity.color} h-1.5 rounded-full transition-all duration-300`}
+                                      style={{ width: `${capacity.percentage}%` }}
+                                    />
+                                  </div>
+                                );
+                              })()}
                             </div>
                             {event.joiningFee > 0 && (
                               <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
