@@ -18,10 +18,6 @@ interface Event {
   attendees: number;
 }
 
-interface FeaturedEventsProps {
-  onNavigate?: (page: string, eventId?: string) => void;
-}
-
 const featuredEvents: Event[] = [
   {
     id: 1,
@@ -65,7 +61,7 @@ const featuredEvents: Event[] = [
   },
 ];
 
-export function FeaturedEvents({ onNavigate }: FeaturedEventsProps) {
+export function FeaturedEvents() {
   return (
     <section id="events" className="py-16 sm:py-24 md:py-32 bg-white relative overflow-hidden">
       {/* Subtle background gradient */}

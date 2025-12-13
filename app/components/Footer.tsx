@@ -1,39 +1,79 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Facebook, Twitter, Instagram, Linkedin, Mail, MapPin, Phone, ArrowRight } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin, Mail, MapPin, Phone, ArrowRight, Loader2, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import Link from 'next/link';
+import { toast } from 'sonner';
 
 const footerLinks = {
   product: [
-    { label: 'Explore Events', href: '#' },
-    { label: 'Create Event', href: '#' },
-    { label: 'Pricing', href: '#' },
-    { label: 'Mobile App', href: '#' },
+    { label: 'Explore Events', href: '/events' },
+    { label: 'Create Event', href: '/events/create' },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Discover', href: '/discover' },
   ],
   company: [
-    { label: 'About Us', href: '#' },
-    { label: 'Careers', href: '#' },
-    { label: 'Blog', href: '#' },
-    { label: 'Press Kit', href: '#' },
+    { label: 'About Us', href: '/about' },
+    { label: 'Login', href: '/login' },
+    { label: 'Register', href: '/register' },
+    { label: 'Host Login', href: '/host-login' },
   ],
   support: [
-    { label: 'Help Center', href: '#' },
-    { label: 'Contact Us', href: '#' },
-    { label: 'Terms of Service', href: '#' },
-    { label: 'Privacy Policy', href: '#' },
+    { label: 'Help Center', href: '/help' },
+    { label: 'Contact Us', href: '/contact' },
+    { label: 'Terms of Service', href: '/terms' },
+    { label: 'Privacy Policy', href: '/settings/privacy' },
   ],
 };
 
 const socialLinks = [
-  { icon: Facebook, href: '#', label: 'Facebook' },
-  { icon: Twitter, href: '#', label: 'Twitter' },
-  { icon: Instagram, href: '#', label: 'Instagram' },
-  { icon: Linkedin, href: '#', label: 'LinkedIn' },
+  { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
+  { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
+  { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
+  { icon: Linkedin, href: 'https://linkedin.com', label: 'LinkedIn' },
 ];
 
 export function Footer() {
+  const [email, setEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setIsSubscribing(true);
+    
+    // Simulate API call (you can replace with actual API endpoint)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsSubscribed(true);
+      toast.success('Successfully subscribed to our newsletter!');
+      setEmail('');
+      
+      // Reset after 3 seconds
+      setTimeout(() => setIsSubscribed(false), 3000);
+    } catch {
+      toast.error('Failed to subscribe. Please try again.');
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   return (
     <footer className="bg-white relative overflow-hidden border-t border-gray-100">
       {/* Newsletter Section */}
@@ -52,17 +92,38 @@ export function Footer() {
               <p className="text-indigo-100 mb-6 sm:mb-8 text-sm sm:text-base md:text-lg px-4">
                 Get exclusive early access to new events, special discounts, and personalized recommendations delivered weekly.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
                 <Input
                   type="email"
                   placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubscribing}
                   className="bg-white/10 border-white/20 text-white placeholder:text-indigo-200 focus:border-white rounded-full px-6 backdrop-blur-sm"
                 />
-                <Button className="bg-white text-indigo-600 hover:bg-indigo-50 rounded-full px-6 sm:px-8 whitespace-nowrap shadow-lg text-sm sm:text-base">
-                  Subscribe
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                <Button 
+                  type="submit"
+                  disabled={isSubscribing || isSubscribed}
+                  className="bg-white text-indigo-600 hover:bg-indigo-50 rounded-full px-6 sm:px-8 whitespace-nowrap shadow-lg text-sm sm:text-base disabled:opacity-70"
+                >
+                  {isSubscribing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Subscribing...
+                    </>
+                  ) : isSubscribed ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Subscribed!
+                    </>
+                  ) : (
+                    <>
+                      Subscribe
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
                 </Button>
-              </div>
+              </form>
             </motion.div>
           </div>
         </div>
@@ -128,12 +189,12 @@ export function Footer() {
             <ul className="space-y-2 sm:space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-xs sm:text-sm text-gray-600 hover:text-teal-600 transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -150,12 +211,12 @@ export function Footer() {
             <ul className="space-y-2 sm:space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-xs sm:text-sm text-gray-600 hover:text-teal-600 transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -172,12 +233,12 @@ export function Footer() {
             <ul className="space-y-2 sm:space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-xs sm:text-sm text-gray-600 hover:text-teal-600 transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

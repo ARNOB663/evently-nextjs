@@ -1,15 +1,33 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Calendar, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface HeroProps {
   onNavigate?: (page: string) => void;
 }
 
 export function Hero({ onNavigate }: HeroProps) {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      router.push(`/events?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/events');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       {/* Background Image with Overlay */}
@@ -114,10 +132,13 @@ export function Hero({ onNavigate }: HeroProps) {
                 <input
                   type="text"
                   placeholder="Search for events, activities..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className="flex-1 outline-none text-gray-700 placeholder:text-gray-400 text-sm sm:text-base md:text-lg py-1"
                 />
                 <motion.button
-                  onClick={() => onNavigate?.('events')}
+                  onClick={handleSearch}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white p-2.5 sm:p-3 md:p-3.5 rounded-full hover:from-teal-600 hover:to-cyan-600 transition-all duration-200 flex-shrink-0 shadow-md"
