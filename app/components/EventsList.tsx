@@ -21,6 +21,7 @@ import {
   Flame,
   Grid3X3,
   Map,
+  CalendarDays,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -43,6 +44,9 @@ const EventsMap = dynamic(() => import('./EventsMap').then(mod => ({ default: mo
     </div>
   ),
 });
+
+// Import EventsCalendar
+import { EventsCalendar } from './EventsCalendar';
 
 interface Event {
   _id: string;
@@ -92,7 +96,7 @@ export function EventsList() {
   const [searchInput, setSearchInput] = useState(searchParams?.get('search') || '');
   const [sortBy, setSortBy] = useState(searchParams?.get('sortBy') || 'date');
   const [sortOrder, setSortOrder] = useState(searchParams?.get('sortOrder') || 'asc');
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'map' | 'calendar'>('grid');
 
   const eventTypes = ['Conference', 'Workshop', 'Meetup', 'Concert', 'Festival', 'Sports', 'Food', 'Music', 'Tech', 'Other'];
   const statuses = ['open', 'full', 'cancelled', 'completed'];
@@ -549,6 +553,18 @@ export function EventsList() {
                 >
                   <Map className="w-4 h-4" />
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setViewMode('calendar')}
+                  className={`transition-all ${
+                    viewMode === 'calendar' 
+                      ? 'bg-white shadow-sm text-teal-600' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
@@ -868,6 +884,24 @@ export function EventsList() {
                 )}
               </Card>
             )}
+          </motion.div>
+        )}
+
+        {/* Calendar View */}
+        {!loading && !error && viewMode === 'calendar' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-8"
+          >
+            <EventsCalendar 
+              events={events} 
+              onDateSelect={(date) => {
+                const dateStr = date.toISOString().split('T')[0];
+                setDateFrom(dateStr);
+                setDateTo(dateStr);
+              }}
+            />
           </motion.div>
         )}
 

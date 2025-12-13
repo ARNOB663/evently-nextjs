@@ -1,6 +1,22 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import './User';
 
+export interface ITicketType {
+  name: string;
+  price: number;
+  quantity: number;
+  sold: number;
+  description?: string;
+  earlyBirdDeadline?: Date;
+}
+
+export interface IAgendaItem {
+  time: string;
+  title: string;
+  description?: string;
+  speaker?: string;
+}
+
 export interface IEvent extends Document {
   hostId: mongoose.Types.ObjectId;
   eventName: string;
@@ -8,6 +24,7 @@ export interface IEvent extends Document {
   description: string;
   date: Date;
   time: string;
+  endTime?: string;
   location: string;
   latitude?: number;
   longitude?: number;
@@ -16,8 +33,11 @@ export interface IEvent extends Document {
   currentParticipants: number;
   joiningFee: number;
   image?: string;
+  images?: string[];
   status: 'open' | 'full' | 'cancelled' | 'completed';
   participants: mongoose.Types.ObjectId[];
+  ticketTypes?: ITicketType[];
+  agenda?: IAgendaItem[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +72,10 @@ const EventSchema: Schema = new Schema(
     time: {
       type: String,
       required: [true, 'Event time is required'],
+    },
+    endTime: {
+      type: String,
+      default: '',
     },
     location: {
       type: String,
@@ -91,6 +115,28 @@ const EventSchema: Schema = new Schema(
       type: String,
       default: '',
     },
+    images: {
+      type: [String],
+      default: [],
+    },
+    ticketTypes: [
+      {
+        name: { type: String, required: true },
+        price: { type: Number, required: true, min: 0 },
+        quantity: { type: Number, required: true, min: 1 },
+        sold: { type: Number, default: 0, min: 0 },
+        description: { type: String, default: '' },
+        earlyBirdDeadline: { type: Date },
+      },
+    ],
+    agenda: [
+      {
+        time: { type: String, required: true },
+        title: { type: String, required: true },
+        description: { type: String, default: '' },
+        speaker: { type: String, default: '' },
+      },
+    ],
     status: {
       type: String,
       enum: ['open', 'full', 'cancelled', 'completed'],

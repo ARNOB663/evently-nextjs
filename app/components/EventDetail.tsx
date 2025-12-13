@@ -32,6 +32,8 @@ import { ReviewForm } from './ReviewForm';
 import { EventComments } from './EventComments';
 import { EventPhotos } from './EventPhotos';
 import { ReportButton } from './ReportButton';
+import { RelatedEvents } from './RelatedEvents';
+import { ShareButtonsCompact } from './ShareButtons';
 import { Skeleton } from './ui/skeleton';
 import { Breadcrumbs } from './ui/breadcrumbs';
 import { toast } from 'sonner';
@@ -735,6 +737,19 @@ export function EventDetail({ eventId }: EventDetailProps) {
                 />
               </Card>
             </motion.div>
+
+            {/* Related Events Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <RelatedEvents
+                currentEventId={eventId}
+                eventType={event.eventType}
+                location={event.location}
+              />
+            </motion.div>
           </div>
 
           {/* Sidebar */}
@@ -857,30 +872,40 @@ export function EventDetail({ eventId }: EventDetailProps) {
                 )}
 
                 {/* Share and Favorite Buttons */}
-                <div className="mt-4 pt-4 border-t flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={handleShare}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                  {isAuthenticated && (
+                <div className="mt-4 pt-4 border-t space-y-3">
+                  <div className="flex gap-2">
                     <Button
-                      variant={isFavorite ? 'default' : 'outline'}
+                      variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={handleToggleFavorite}
-                      disabled={favoriteLoading}
+                      onClick={handleShare}
                     >
-                      <Heart
-                        className={`w-4 h-4 mr-2 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
-                      />
-                      {isFavorite ? 'Saved' : 'Save'}
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
                     </Button>
-                  )}
+                    {isAuthenticated && (
+                      <Button
+                        variant={isFavorite ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1"
+                        onClick={handleToggleFavorite}
+                        disabled={favoriteLoading}
+                      >
+                        <Heart
+                          className={`w-4 h-4 mr-2 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`}
+                        />
+                        {isFavorite ? 'Saved' : 'Save'}
+                      </Button>
+                    )}
+                  </div>
+                  {/* Social Share Buttons */}
+                  <div className="flex justify-center">
+                    <ShareButtonsCompact
+                      url={typeof window !== 'undefined' ? `${window.location.origin}/events/${eventId}` : `/events/${eventId}`}
+                      title={event.eventName}
+                      description={event.description?.slice(0, 100)}
+                    />
+                  </div>
                 </div>
               </Card>
 

@@ -52,6 +52,9 @@ export interface IUser extends Document {
   // Email Verification
   emailVerified?: boolean;
   emailVerifiedAt?: Date;
+  // Follow System
+  followingHosts?: mongoose.Types.ObjectId[];
+  followers?: mongoose.Types.ObjectId[];
 }
 
 const UserSchema: Schema = new Schema(
@@ -229,6 +232,19 @@ const UserSchema: Schema = new Schema(
     emailVerifiedAt: {
       type: Date,
     },
+    // Follow System
+    followingHosts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    followers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     timestamps: true,
