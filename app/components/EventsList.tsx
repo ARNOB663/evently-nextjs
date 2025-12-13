@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar,
   MapPin,
@@ -47,28 +48,76 @@ interface Event {
 }
 
 export function EventsList() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [eventTypeFilter, setEventTypeFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [priceMin, setPriceMin] = useState('');
-  const [priceMax, setPriceMax] = useState('');
-  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
+  const [eventTypeFilter, setEventTypeFilter] = useState(searchParams?.get('eventType') || '');
+  const [locationFilter, setLocationFilter] = useState(searchParams?.get('location') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams?.get('status') || '');
+  const [dateFrom, setDateFrom] = useState(searchParams?.get('dateFrom') || '');
+  const [dateTo, setDateTo] = useState(searchParams?.get('dateTo') || '');
+  const [priceMin, setPriceMin] = useState(searchParams?.get('priceMin') || '');
+  const [priceMax, setPriceMax] = useState(searchParams?.get('priceMax') || '');
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(
+    searchParams?.getAll('eventTypes') || []
+  );
+  const [datePreset, setDatePreset] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(parseInt(searchParams?.get('page') || '1'));
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [searchInput, setSearchInput] = useState(searchParams?.get('search') || '');
 
   const eventTypes = ['Conference', 'Workshop', 'Meetup', 'Concert', 'Festival', 'Sports', 'Food', 'Music', 'Tech', 'Other'];
   const statuses = ['open', 'full', 'cancelled', 'completed'];
 
+  // Update URL with current filters
+  const updateURL = useCallback((filters: any) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.set('search', filters.search);
+    if (filters.eventType) params.set('eventType', filters.eventType);
+    if (filters.location) params.set('location', filters.location);
+    if (filters.status) params.set('status', filters.status);
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params.set('dateTo', filters.dateTo);
+    if (filters.priceMin) params.set('priceMin', filters.priceMin);
+    if (filters.priceMax) params.set('priceMax', filters.priceMax);
+    filters.eventTypes?.forEach((type: string) => params.append('eventTypes', type));
+    if (filters.page > 1) params.set('page', filters.page.toString());
+    
+    const newUrl = params.toString() ? `/events?${params.toString()}` : '/events';
+    router.replace(newUrl, { scroll: false });
+  }, [router]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== searchQuery) {
+        setSearchQuery(searchInput);
+        setPage(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, searchQuery]);
+
   useEffect(() => {
     fetchEvents();
+    updateURL({
+      search: searchQuery,
+      eventType: eventTypeFilter,
+      location: locationFilter,
+      status: statusFilter,
+      dateFrom,
+      dateTo,
+      priceMin,
+      priceMax,
+      eventTypes: selectedEventTypes,
+      page,
+    });
   }, [page, searchQuery, eventTypeFilter, locationFilter, statusFilter, dateFrom, dateTo, priceMin, priceMax, selectedEventTypes]);
 
   const fetchEvents = async () => {
@@ -112,12 +161,51 @@ export function EventsList() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setSearchQuery(searchInput);
     setPage(1);
-    fetchEvents();
+  };
+
+  const handleDatePreset = (preset: string) => {
+    setDatePreset(preset);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    switch (preset) {
+      case 'today':
+        setDateFrom(today.toISOString().split('T')[0]);
+        setDateTo(today.toISOString().split('T')[0]);
+        break;
+      case 'thisWeek':
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - today.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        setDateFrom(weekStart.toISOString().split('T')[0]);
+        setDateTo(weekEnd.toISOString().split('T')[0]);
+        break;
+      case 'thisMonth':
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        setDateFrom(monthStart.toISOString().split('T')[0]);
+        setDateTo(monthEnd.toISOString().split('T')[0]);
+        break;
+      case 'nextMonth':
+        const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+        const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+        setDateFrom(nextMonthStart.toISOString().split('T')[0]);
+        setDateTo(nextMonthEnd.toISOString().split('T')[0]);
+        break;
+      case 'clear':
+        setDateFrom('');
+        setDateTo('');
+        setDatePreset('');
+        break;
+    }
   };
 
   const clearFilters = () => {
     setSearchQuery('');
+    setSearchInput('');
     setEventTypeFilter('');
     setLocationFilter('');
     setStatusFilter('');
@@ -126,7 +214,9 @@ export function EventsList() {
     setPriceMin('');
     setPriceMax('');
     setSelectedEventTypes([]);
+    setDatePreset('');
     setPage(1);
+    router.replace('/events', { scroll: false });
   };
 
   const toggleEventType = (type: string) => {
@@ -192,8 +282,8 @@ export function EventsList() {
                   <Input
                     type="text"
                     placeholder="Search events by name, type, or description..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     className="pl-10 w-full"
                   />
                 </div>
@@ -271,6 +361,128 @@ export function EventsList() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Date Preset
+                    </label>
+                    <select
+                      value={datePreset}
+                      onChange={(e) => handleDatePreset(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      <option value="">Custom Range</option>
+                      <option value="today">Today</option>
+                      <option value="thisWeek">This Week</option>
+                      <option value="thisMonth">This Month</option>
+                      <option value="nextMonth">Next Month</option>
+                      <option value="clear">Clear Date</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Date From
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setDatePreset('');
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Date To
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setDatePreset('');
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Price Min ($)
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={priceMin}
+                      onChange={(e) => setPriceMin(e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Price Max ($)
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="1000"
+                      value={priceMax}
+                      onChange={(e) => setPriceMax(e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                      Price Type
+                    </label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={priceMin === '' && priceMax === '' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          setPriceMin('');
+                          setPriceMax('');
+                        }}
+                        className="flex-1"
+                      >
+                        All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={priceMin === '0' && priceMax === '0' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          setPriceMin('0');
+                          setPriceMax('0');
+                        }}
+                        className="flex-1"
+                      >
+                        Free
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={priceMin === '0.01' && priceMax === '' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          setPriceMin('0.01');
+                          setPriceMax('');
+                        }}
+                        className="flex-1"
+                      >
+                        Paid
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
