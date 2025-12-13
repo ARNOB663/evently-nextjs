@@ -32,6 +32,7 @@ import { ReviewForm } from './ReviewForm';
 import { EventComments } from './EventComments';
 import { EventPhotos } from './EventPhotos';
 import { ReportButton } from './ReportButton';
+import { Skeleton } from './ui/skeleton';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -347,8 +348,47 @@ export function EventDetail({ eventId }: EventDetailProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-24">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pt-24 sm:pt-28 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Back Button Skeleton */}
+          <Skeleton className="h-10 w-24 mb-6" />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            {/* Main Content Skeleton */}
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              {/* Event Image Skeleton */}
+              <Skeleton className="w-full h-[250px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl" />
+              
+              {/* Event Details Skeleton */}
+              <Card className="p-4 sm:p-6 md:p-8">
+                <Skeleton className="h-8 w-3/4 mb-4" />
+                <Skeleton className="h-6 w-1/4 mb-6" />
+                <div className="space-y-4">
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-5 w-3/4" />
+                </div>
+                <div className="border-t pt-6 mt-6">
+                  <Skeleton className="h-6 w-1/3 mb-4" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-5/6" />
+                </div>
+              </Card>
+            </div>
+            
+            {/* Sidebar Skeleton */}
+            <div className="lg:col-span-1">
+              <Card className="p-4 sm:p-6">
+                <Skeleton className="h-8 w-1/2 mb-6" />
+                <Skeleton className="h-2 w-full mb-4" />
+                <Skeleton className="h-12 w-full mb-4" />
+                <Skeleton className="h-10 w-full" />
+              </Card>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -418,18 +458,19 @@ export function EventDetail({ eventId }: EventDetailProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* Event Image */}
+            {/* Event Banner Image */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg bg-gray-100"
+              className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-xl bg-gray-100"
             >
               {event.image ? (
                 <ImageWithFallback
                   src={event.image}
                   alt={event.eventName}
                   className="w-full h-[250px] sm:h-[400px] md:h-[500px] object-cover"
+                  lazy={false}
                 />
               ) : (
                 <div className="w-full h-[250px] sm:h-[400px] md:h-[500px] flex items-center justify-center bg-gradient-to-br from-teal-100 to-cyan-100">
@@ -455,12 +496,14 @@ export function EventDetail({ eventId }: EventDetailProps) {
             >
               <Card className="p-4 sm:p-6 md:p-8">
                 <div className="mb-4 sm:mb-6">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
                     {event.eventName}
                   </h1>
-                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                    <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
-                    <span className="text-base sm:text-lg text-gray-600">{event.eventType}</span>
+                  <div className="flex items-center gap-2 mb-4 sm:mb-5">
+                    <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
+                    <Badge className="bg-teal-100 text-teal-800 border-teal-200 text-xs sm:text-sm">
+                      {event.eventType}
+                    </Badge>
                   </div>
                 </div>
 
@@ -518,9 +561,9 @@ export function EventDetail({ eventId }: EventDetailProps) {
                 </div>
 
                 {/* Description */}
-                <div className="border-t pt-4 sm:pt-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">About this event</h2>
-                  <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
+                <div className="border-t border-gray-200 pt-4 sm:pt-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">About this event</h2>
+                  <p className="text-sm sm:text-base lg:text-lg text-gray-700 leading-relaxed whitespace-pre-line">
                     {event.description}
                   </p>
                 </div>
@@ -657,11 +700,13 @@ export function EventDetail({ eventId }: EventDetailProps) {
               className="sticky top-24 sm:top-28 space-y-4 sm:space-y-6"
             >
               {/* Action Card */}
-              <Card className="p-4 sm:p-6">
+              <Card className="p-4 sm:p-6 shadow-lg">
                 {event.joiningFee > 0 && (
-                  <div className="mb-6">
+                  <div className="mb-6 pb-6 border-b border-gray-200">
                     <p className="text-sm text-gray-500 mb-1">Price</p>
-                    <p className="text-3xl font-bold text-gray-900">${event.joiningFee}</p>
+                    <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
+                      ${event.joiningFee}
+                    </p>
                   </div>
                 )}
 
@@ -709,7 +754,7 @@ export function EventDetail({ eventId }: EventDetailProps) {
                 ) : canJoin() ? (
                   event.joiningFee > 0 ? (
                     <Button
-                      className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                      className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-base font-semibold py-6"
                       onClick={handlePaymentCheckout}
                       disabled={processingPayment}
                     >
@@ -727,7 +772,7 @@ export function EventDetail({ eventId }: EventDetailProps) {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                      className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-base font-semibold py-6"
                       onClick={handleJoinEvent}
                       disabled={joining}
                     >
@@ -794,8 +839,8 @@ export function EventDetail({ eventId }: EventDetailProps) {
               </Card>
 
               {/* Host Card */}
-              <Card className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Hosted by</h3>
+              <Card className="p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Hosted by</h3>
                 <div className="flex items-start gap-4">
                   <Avatar className="w-16 h-16">
                     <AvatarImage src={event.hostId.profileImage} />

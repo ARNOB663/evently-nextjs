@@ -21,6 +21,7 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Skeleton } from './ui/skeleton';
 
 interface Event {
   _id: string;
@@ -169,8 +170,10 @@ export function EventsList() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8 sm:mb-12"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Browse Events</h1>
-          <p className="text-gray-600">Discover amazing events happening around you</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
+            Browse Events
+          </h1>
+          <p className="text-gray-600 text-base sm:text-lg">Discover amazing events happening around you</p>
         </motion.div>
 
         {/* Search and Filters */}
@@ -321,16 +324,36 @@ export function EventsList() {
         </motion.div>
 
         {/* Results Count */}
-        {!loading && (
-          <div className="mb-6 text-sm text-gray-600">
-            Showing {events.length} of {total} events
-          </div>
+        {!loading && events.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 text-sm sm:text-base text-gray-600"
+          >
+            <span className="font-semibold text-gray-900">{events.length}</span> of{' '}
+            <span className="font-semibold text-gray-900">{total}</span> events
+            {hasActiveFilters && ' match your filters'}
+          </motion.div>
         )}
 
-        {/* Loading State */}
+        {/* Loading State - Skeleton Loaders */}
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <Skeleton className="h-48 w-full" />
+                <div className="p-4 sm:p-5 md:p-6 space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-9 w-24 rounded-full" />
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         )}
 
@@ -348,20 +371,31 @@ export function EventsList() {
         {!loading && !error && (
           <>
             {events.length === 0 ? (
-              <Card className="p-12 text-center">
-                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No events found</h3>
-                <p className="text-gray-600 mb-6">
-                  {hasActiveFilters
-                    ? 'Try adjusting your filters to see more events.'
-                    : 'No events are available at the moment.'}
-                </p>
-                {hasActiveFilters && (
-                  <Button onClick={clearFilters} variant="outline">
-                    Clear Filters
-                  </Button>
-                )}
-              </Card>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="col-span-full"
+              >
+                <Card className="p-12 sm:p-16 text-center">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center">
+                    <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-teal-600" />
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">No events found</h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto text-base sm:text-lg">
+                    {hasActiveFilters
+                      ? 'Try adjusting your filters to see more events.'
+                      : 'No events are available at the moment. Check back later!'}
+                  </p>
+                  {hasActiveFilters && (
+                    <Button 
+                      onClick={clearFilters} 
+                      className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </Card>
+              </motion.div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {events.map((event, index) => (
@@ -375,16 +409,17 @@ export function EventsList() {
                     >
                       <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
                         {/* Event Image */}
-                        <div className="relative h-48 overflow-hidden bg-gray-100">
+                        <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-100">
                           {event.image ? (
                             <ImageWithFallback
                               src={event.image}
                               alt={event.eventName}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              lazy={true}
                             />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center">
-                              <Calendar className="w-16 h-16 text-white/50" />
+                              <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-white/50" />
                             </div>
                           )}
                           <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
