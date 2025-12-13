@@ -22,23 +22,19 @@ const ReportSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     reportedUserId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      index: true,
     },
     reportedEventId: {
       type: Schema.Types.ObjectId,
       ref: 'Event',
-      index: true,
     },
     type: {
       type: String,
       enum: ['user', 'event'],
       required: true,
-      index: true,
     },
     reason: {
       type: String,
@@ -60,7 +56,6 @@ const ReportSchema: Schema = new Schema(
       type: String,
       enum: ['pending', 'reviewed', 'resolved', 'dismissed'],
       default: 'pending',
-      index: true,
     },
     reviewedBy: {
       type: Schema.Types.ObjectId,

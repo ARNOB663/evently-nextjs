@@ -16,16 +16,13 @@ const PasswordResetSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     token: {
       type: String,
-      index: true,
     },
     otp: {
       type: String,
       required: true,
-      index: true,
     },
     expiresAt: {
       type: Date,

@@ -16,13 +16,11 @@ const EmailVerificationSchema: Schema = new Schema(
       ref: 'User',
       required: true,
       unique: true,
-      index: true,
     },
     token: {
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     expiresAt: {
       type: Date,

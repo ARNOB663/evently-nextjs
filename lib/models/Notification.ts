@@ -20,13 +20,11 @@ const NotificationSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     type: {
       type: String,
       enum: ['friend_request', 'friend_accepted', 'profile_visit', 'friend_joined_event', 'friend_became_host', 'event_reminder', 'message', 'reminder', 'follow', 'new_event', 'spot_available'],
       required: true,
-      index: true,
     },
     title: {
       type: String,
@@ -53,7 +51,6 @@ const NotificationSchema: Schema = new Schema(
     isRead: {
       type: Boolean,
       default: false,
-      index: true,
     },
     readAt: {
       type: Date,

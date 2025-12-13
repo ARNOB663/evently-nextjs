@@ -17,13 +17,11 @@ const EventPhotoSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Event',
       required: true,
-      index: true,
     },
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     imageUrl: {
       type: String,

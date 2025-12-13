@@ -24,7 +24,6 @@ const ActivitySchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     type: {
       type: String,
@@ -38,7 +37,6 @@ const ActivitySchema: Schema = new Schema(
         'became_host',
       ],
       required: true,
-      index: true,
     },
     relatedUser: {
       type: Schema.Types.ObjectId,

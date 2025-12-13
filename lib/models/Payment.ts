@@ -52,11 +52,9 @@ const PaymentSchema: Schema = new Schema(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     stripeSessionId: {
       type: String,
-      index: true,
     },
     status: {
       type: String,

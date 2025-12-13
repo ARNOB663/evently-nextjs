@@ -15,19 +15,16 @@ const FriendRequestSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     to: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     status: {
       type: String,
       enum: ['pending', 'accepted', 'rejected', 'cancelled'],
       default: 'pending',
-      index: true,
     },
     message: {
       type: String,
