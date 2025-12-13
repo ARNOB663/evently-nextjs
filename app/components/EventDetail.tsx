@@ -92,15 +92,46 @@ export function EventDetail({ eventId }: EventDetailProps) {
   // Handle payment success/cancelled query params
   useEffect(() => {
     const paymentStatus = searchParams?.get('payment');
-    if (paymentStatus === 'success') {
-      toast.success('Payment successful! You have been added to the event.');
-      fetchEvent(); // Refresh event data
-      router.replace(`/events/${eventId}`); // Remove query params
+    if (paymentStatus === 'success' && token) {
+      // Verify payment and join event
+      verifyPaymentAndJoin();
     } else if (paymentStatus === 'cancelled') {
       toast.error('Payment was cancelled.');
       router.replace(`/events/${eventId}`); // Remove query params
     }
-  }, [searchParams, eventId, router]);
+  }, [searchParams, eventId, router, token]);
+
+  const verifyPaymentAndJoin = async () => {
+    try {
+      setJoining(true);
+      const response = await fetch('/api/payments/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.alreadyJoined) {
+          toast.success('You are already a participant in this event!');
+        } else {
+          toast.success('Payment verified! You have successfully joined the event.');
+        }
+        setEvent(data.event);
+      } else {
+        toast.error(data.error || 'Failed to verify payment');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to verify payment');
+    } finally {
+      setJoining(false);
+      router.replace(`/events/${eventId}`); // Remove query params
+    }
+  };
 
   const checkFavorite = async () => {
     if (!token || !user) return;
