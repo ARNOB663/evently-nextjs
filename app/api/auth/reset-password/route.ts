@@ -3,9 +3,16 @@ import connectDB from '@/lib/db';
 import User from '@/lib/models/User';
 import PasswordReset from '@/lib/models/PasswordReset';
 import { hashPassword } from '@/lib/utils/auth';
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rateLimit';
 
 // POST /api/auth/reset-password - Reset password with token
 export async function POST(req: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = checkRateLimit(req, RATE_LIMIT_CONFIGS.resetPassword);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     await connectDB();
 
@@ -19,9 +26,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    // Strong password validation: 8+ chars, uppercase, lowercase, number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: 'Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, and one number' },
         { status: 400 }
       );
     }

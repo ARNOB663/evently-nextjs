@@ -4,9 +4,16 @@ import User from '@/lib/models/User';
 import EmailVerification from '@/lib/models/EmailVerification';
 import { hashPassword, generateToken } from '@/lib/utils/auth';
 import { sendEmail } from '@/lib/utils/email';
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rateLimit';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = checkRateLimit(req, RATE_LIMIT_CONFIGS.register);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     await connectDB();
 
@@ -21,9 +28,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    // Strong password validation: 8+ chars, uppercase, lowercase, number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
+        { error: 'Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, and one number' },
         { status: 400 }
       );
     }

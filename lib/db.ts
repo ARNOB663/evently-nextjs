@@ -1,13 +1,14 @@
 import mongoose from 'mongoose';
+import { dbLogger } from './utils/logger';
 
 // Set up connection event listeners
 function setupConnectionListeners() {
   mongoose.connection.on('error', (err) => {
-    console.error('❌ MongoDB Connection Error:', err.message);
+    dbLogger.error('Connection Error', err);
   });
 
   mongoose.connection.on('disconnected', () => {
-    console.log('⚠️  MongoDB: Disconnected');
+    dbLogger.warn('Disconnected');
   });
 }
 
@@ -85,22 +86,22 @@ async function connectDB() {
   if (!cached.promise) {
     const connectionString = getConnectionString();
     
-    // Log connection attempt (hide sensitive info)
-    const maskedUri = connectionString.replace(/\/\/([^:]+):([^@]+)@/, '//$1:***@');
-    console.log('🔄 MongoDB: Connecting...');
+    dbLogger.debug('Connecting...');
     
     const opts = {
       bufferCommands: false,
+      maxPoolSize: 10, // Connection pool optimization
+      minPoolSize: 2,
     };
 
     cached.promise = mongoose.connect(connectionString, opts)
       .then((mongoose) => {
         const dbName = mongoose.connection.db?.databaseName || 'events-platform';
-        console.log(`✅ MongoDB Connected - Database: ${dbName}`);
+        dbLogger.info(`Connected - Database: ${dbName}`);
         return mongoose;
       })
       .catch((error) => {
-        console.error('❌ MongoDB Connection Failed:', error.message);
+        dbLogger.error('Connection Failed', error);
         throw error;
       });
   }

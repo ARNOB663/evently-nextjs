@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { emailLogger } from './logger';
 
 // Email utility functions using Nodemailer
 
@@ -19,30 +20,19 @@ const createTransporter = () => {
   // Default to Gmail SMTP settings
   const emailHost = 'smtp.gmail.com';
   const emailPort = '587';
-  const emailFrom = emailUser;
 
-  // Log configuration status (without sensitive data)
-  console.log('📧 Email Configuration Check:', {
-    hasUser: !!emailUser,
-    hasPass: !!emailPass,
-    host: emailHost,
-    port: emailPort,
-    from: emailFrom,
-  });
-
-  // If no email configuration, return null (will log in dev mode)
+  // If no email configuration, return null
   if (!emailUser || !emailPass) {
-    console.warn('⚠️  Email configuration incomplete. Missing:', {
-      user: !emailUser,
-      pass: !emailPass,
-    });
-    console.warn('💡 Please set MAIL_USER and MAIL_PASS in .env.local');
+    emailLogger.warn('Email configuration incomplete - missing MAIL_USER or MAIL_PASS');
     return null;
   }
 
   // Remove spaces from password (Gmail App Passwords sometimes have spaces)
   const cleanPassword = emailPass.replace(/\s/g, '');
 
+  // In production, enforce TLS certificate validation
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return nodemailer.createTransport({
     host: emailHost,
     port: parseInt(emailPort),
@@ -51,9 +41,9 @@ const createTransporter = () => {
       user: emailUser,
       pass: cleanPassword,
     },
-    // For Gmail, you need to use App Password
     tls: {
-      rejectUnauthorized: false, // For development/testing
+      // Only disable certificate validation in development
+      rejectUnauthorized: isProduction,
     },
   });
 };
@@ -62,28 +52,15 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     const transporter = createTransporter();
 
-    // If no transporter (no email config), log in development mode
+    // If no transporter (no email config), return false
     if (!transporter) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📧 Email would be sent (no email config):', {
-          to: options.to,
-          subject: options.subject,
-        });
-        console.log('💡 To enable email sending, add EMAIL_HOST, EMAIL_USER, and EMAIL_PASS to .env.local');
-        return false; // Return false so we know emails aren't being sent
-      } else {
-        console.error('Email configuration missing. Cannot send email.');
-        return false;
-      }
+      emailLogger.debug(`Email not sent (no config): ${options.subject}`);
+      return false;
     }
 
     const emailFrom = process.env.MAIL_USER || 'noreply@evently.com';
 
-    console.log('📤 Attempting to send email:', {
-      to: options.to,
-      subject: options.subject,
-      from: emailFrom,
-    });
+    emailLogger.debug(`Sending email: ${options.subject}`);
 
     // Send email
     const info = await transporter.sendMail({
@@ -94,32 +71,19 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text || options.html.replace(/<[^>]*>?/gm, ''), // Strip HTML tags for plain text
     });
 
-    console.log('✅ Email sent successfully:', {
-      to: options.to,
-      subject: options.subject,
-      messageId: info.messageId,
-      response: info.response,
-    });
+    emailLogger.info(`Email sent successfully: ${options.subject}`);
 
     return true;
   } catch (error: any) {
-    console.error('❌ Failed to send email:', {
-      message: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response,
-      responseCode: error.responseCode,
-      stack: error.stack,
-    });
-    
     // Log specific error details for debugging
     if (error.code === 'EAUTH') {
-      console.error('🔐 Authentication failed. Check your email credentials.');
-      console.error('💡 For Gmail, make sure you\'re using an App Password, not your regular password.');
+      emailLogger.error('Authentication failed - check email credentials');
     } else if (error.code === 'ECONNECTION') {
-      console.error('🔌 Connection failed. Check your network and firewall settings.');
+      emailLogger.error('Connection failed - check network settings');
     } else if (error.code === 'ETIMEDOUT') {
-      console.error('⏱️  Connection timeout. Check your email server settings.');
+      emailLogger.error('Connection timeout - check email server settings');
+    } else {
+      emailLogger.error('Failed to send email', error);
     }
     
     return false;

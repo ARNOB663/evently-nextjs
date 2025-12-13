@@ -1,8 +1,23 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
-// Support both JWT_SECRET and SECRET_KEY environment variable names
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SECRET_KEY || 'fallback-secret-key-min-32-chars-long';
+// Get JWT secret from environment variables - required in production
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET || process.env.SECRET_KEY;
+  
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET or SECRET_KEY environment variable must be set in production');
+    }
+    // Only allow fallback in development with a warning
+    console.warn('⚠️  WARNING: Using fallback JWT secret. Set JWT_SECRET in .env.local for production.');
+    return 'dev-only-fallback-secret-key-min-32-chars';
+  }
+  
+  return secret;
+}
+
+const JWT_SECRET = getJwtSecret();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 export interface JWTPayload {

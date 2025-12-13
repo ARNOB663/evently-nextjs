@@ -3,10 +3,17 @@ import connectDB from '@/lib/db';
 import User from '@/lib/models/User';
 import PasswordReset from '@/lib/models/PasswordReset';
 import { sendEmail, generateEmailTemplate } from '@/lib/utils/email';
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rateLimit';
 import crypto from 'crypto';
 
 // POST /api/auth/forgot-password - Request password reset
 export async function POST(req: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = checkRateLimit(req, RATE_LIMIT_CONFIGS.forgotPassword);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     await connectDB();
 
@@ -17,13 +24,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
+    // Generic success message to prevent user enumeration
+    const successResponse = {
+      message: 'If an account with that email exists, a password reset OTP has been sent.',
+      emailSent: true,
+    };
+
     const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // Return same response whether user exists or not (prevents enumeration)
     if (!user) {
-      // Explicitly tell client that email is not registered
-      return NextResponse.json(
-        { error: 'Email not found. Please check and try again.' },
-        { status: 404 }
-      );
+      // Still return success to prevent email enumeration attacks
+      return NextResponse.json(successResponse, { status: 200 });
     }
 
     // Generate 6-digit OTP
@@ -41,34 +53,22 @@ export async function POST(req: NextRequest) {
       expiresAt,
     });
 
-    // Send password reset email with OTP
-    console.log('📧 Sending OTP email to:', user.email);
-    const emailSent = await sendEmail({
-      to: user.email,
-      subject: 'Reset Your Password - Evently',
-      html: generateEmailTemplate('password_reset_otp', {
-        otp,
-        fullName: user.fullName,
-      }),
-    });
-
-    if (!emailSent) {
-      console.error('❌ Failed to send password reset email to:', user.email);
-      return NextResponse.json(
-        {
-          error: 'Failed to send email. Please try again later or contact support.',
-        },
-        { status: 500 }
-      );
+    // Send password reset email with OTP (don't expose email failure to client)
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset Your Password - Evently',
+        html: generateEmailTemplate('password_reset_otp', {
+          otp,
+          fullName: user.fullName,
+        }),
+      });
+    } catch (emailError) {
+      // Log error but don't expose to client
+      console.error('Failed to send password reset email');
     }
 
-    return NextResponse.json(
-      {
-        message: 'A password reset OTP has been sent to your email.',
-        emailSent: true,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json(successResponse, { status: 200 });
   } catch (error: any) {
     console.error('Forgot password error:', error);
     return NextResponse.json(

@@ -24,19 +24,19 @@ const PaymentSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
+      // Index defined via compound index below
     },
     eventId: {
       type: Schema.Types.ObjectId,
       ref: 'Event',
       required: true,
-      index: true,
+      // Index defined via schema.index() below
     },
     hostId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
+      // Index defined via compound index below
     },
     amount: {
       type: Number,
@@ -62,7 +62,7 @@ const PaymentSchema: Schema = new Schema(
       type: String,
       enum: ['pending', 'completed', 'failed', 'refunded'],
       default: 'pending',
-      index: true,
+      // Index defined via schema.index() below
     },
     paymentMethod: {
       type: String,

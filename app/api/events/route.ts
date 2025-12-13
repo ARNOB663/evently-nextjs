@@ -104,14 +104,26 @@ export async function GET(req: NextRequest) {
         sortOptions.date = 1; // Default: soonest first
     }
 
-    // Get events
-    const events = await Event.find(query)
+    // Get events - limit participants to first 5 for preview (optimization)
+    const includeParticipants = searchParams.get('includeParticipants') === 'true';
+    const participantLimit = parseInt(searchParams.get('participantLimit') || '5');
+    
+    let eventsQuery = Event.find(query)
       .populate('hostId', 'fullName profileImage averageRating')
-      .populate('participants', 'fullName profileImage')
       .sort(sortOptions)
       .skip(skip)
       .limit(limit);
-
+    
+    // Only populate limited participants if needed (performance optimization)
+    if (includeParticipants) {
+      eventsQuery = eventsQuery.populate({
+        path: 'participants',
+        select: 'fullName profileImage',
+        options: { limit: participantLimit },
+      });
+    }
+    
+    const events = await eventsQuery;
     const total = await Event.countDocuments(query);
 
     return NextResponse.json(

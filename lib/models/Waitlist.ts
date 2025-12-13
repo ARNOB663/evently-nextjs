@@ -19,13 +19,13 @@ const WaitlistSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Event',
       required: true,
-      index: true,
+      // Index defined via compound index below
     },
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
+      // Index defined via compound index below
     },
     position: {
       type: Number,

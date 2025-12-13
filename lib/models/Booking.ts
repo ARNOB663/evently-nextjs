@@ -40,13 +40,13 @@ const BookingSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
+      // Index defined via compound index below
     },
     eventId: {
       type: Schema.Types.ObjectId,
       ref: 'Event',
       required: true,
-      index: true,
+      // Index defined via compound index below
     },
     ticketType: {
       type: String,
@@ -81,7 +81,7 @@ const BookingSchema: Schema = new Schema(
       type: String,
       enum: ['pending', 'confirmed', 'cancelled', 'refunded'],
       default: 'pending',
-      index: true,
+      // Index defined via compound index below
     },
     paymentId: {
       type: Schema.Types.ObjectId,

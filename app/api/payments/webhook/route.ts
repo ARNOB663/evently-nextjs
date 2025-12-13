@@ -9,10 +9,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-11-17.clover',
 });
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
-
 export async function POST(req: NextRequest) {
   try {
+    // Validate webhook secret is configured
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET is not configured');
+      return NextResponse.json(
+        { error: 'Webhook configuration error' },
+        { status: 500 }
+      );
+    }
+
     await connectDB();
 
     const body = await req.text();
@@ -27,8 +35,8 @@ export async function POST(req: NextRequest) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
-      return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+      console.error('Webhook signature verification failed');
+      return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
     }
 
     // Handle the event

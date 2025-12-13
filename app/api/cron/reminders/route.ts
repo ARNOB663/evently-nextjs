@@ -4,9 +4,6 @@ import Event from '@/lib/models/Event';
 import Notification from '@/lib/models/Notification';
 import { sendEmail } from '@/lib/utils/email';
 
-// Secret key to protect cron endpoint
-const CRON_SECRET = process.env.CRON_SECRET || 'default-cron-secret';
-
 // Type for populated participant
 interface PopulatedParticipant {
   _id: string;
@@ -14,12 +11,31 @@ interface PopulatedParticipant {
   email: string;
 }
 
+// Validate CRON_SECRET is configured
+function getCronSecret(): string | null {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    console.error('CRON_SECRET environment variable is not configured');
+    return null;
+  }
+  return secret;
+}
+
 // GET /api/cron/reminders - Send event reminders (called by cron job)
 export async function GET(req: NextRequest) {
   try {
-    // Verify cron secret
+    // Verify cron secret is configured
+    const cronSecret = getCronSecret();
+    if (!cronSecret) {
+      return NextResponse.json(
+        { error: 'Cron endpoint not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Verify authorization
     const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -91,8 +107,17 @@ export async function GET(req: NextRequest) {
 // POST /api/cron/reminders - Manually trigger reminder for specific event
 export async function POST(req: NextRequest) {
   try {
+    // Verify cron secret is configured
+    const cronSecret = getCronSecret();
+    if (!cronSecret) {
+      return NextResponse.json(
+        { error: 'Cron endpoint not configured' },
+        { status: 500 }
+      );
+    }
+
     const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

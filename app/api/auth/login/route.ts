@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/lib/models/User';
 import { comparePassword, generateToken } from '@/lib/utils/auth';
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rateLimit';
+import { authLogger } from '@/lib/utils/logger';
 
 export async function POST(req: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = checkRateLimit(req, RATE_LIMIT_CONFIGS.login);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     await connectDB();
 
@@ -96,9 +104,9 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Login error:', error);
+    authLogger.error('Login error', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to login' },
+      { error: 'Failed to login' },
       { status: 500 }
     );
   }
