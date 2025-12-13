@@ -5,6 +5,7 @@ import EmailVerification from '@/lib/models/EmailVerification';
 import { hashPassword, generateToken } from '@/lib/utils/auth';
 import { sendEmail } from '@/lib/utils/email';
 import { checkRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rateLimit';
+import { validateBody, registerSchema } from '@/lib/validations';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -15,27 +16,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Validate input with Zod
+    const { data, error } = await validateBody(req, registerSchema);
+    if (error) return error;
+
+    const { email, password, fullName, role } = data;
+
     await connectDB();
-
-    const body = await req.json();
-    const { email, password, fullName, role = 'user' } = body;
-
-    // Validation
-    if (!email || !password || !fullName) {
-      return NextResponse.json(
-        { error: 'Email, password, and full name are required' },
-        { status: 400 }
-      );
-    }
-
-    // Strong password validation: 8+ chars, uppercase, lowercase, number
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, and one number' },
-        { status: 400 }
-      );
-    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -49,8 +36,7 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user
-    const sanitizedRole = role === 'admin' ? 'user' : role;
+    // Create user (role is already validated by Zod to be 'user' or 'host')
     const socialDefaults = {
       instagram: '',
       twitter: '',
@@ -63,7 +49,7 @@ export async function POST(req: NextRequest) {
       email: email.toLowerCase(),
       password: hashedPassword,
       fullName,
-      role: sanitizedRole,
+      role,
       profileImage: '',
       coverImage: '',
       bio: '',

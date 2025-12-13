@@ -4,6 +4,7 @@ import User from '@/lib/models/User';
 import { comparePassword, generateToken } from '@/lib/utils/auth';
 import { checkRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rateLimit';
 import { authLogger } from '@/lib/utils/logger';
+import { validateBody, loginSchema } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   // Apply rate limiting
@@ -13,18 +14,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Validate input
+    const { data, error } = await validateBody(req, loginSchema);
+    if (error) return error;
+
+    const { email, password } = data;
+
     await connectDB();
-
-    const body = await req.json();
-    const { email, password } = body;
-
-    // Validation
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
-    }
 
     // Find user and include password
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
