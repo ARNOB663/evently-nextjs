@@ -2,6 +2,7 @@ import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import Link from 'next/link';
 
+// Create Event Page - redirects to dashboard
 export default function CreateEventPage() {
   return (
     <>
