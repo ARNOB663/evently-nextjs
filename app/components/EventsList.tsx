@@ -403,46 +403,66 @@ export function EventsList() {
           className="mb-4 flex flex-wrap gap-2"
         >
           <Button
-            variant={dateFrom && dateTo ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
             onClick={() => applyQuickFilter('thisWeekend')}
-            className="rounded-full text-xs sm:text-sm"
+            className={`rounded-full text-xs sm:text-sm transition-all ${
+              dateFrom && dateTo 
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent hover:from-teal-600 hover:to-cyan-600' 
+                : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+            }`}
           >
             <Calendar className="w-3 h-3 mr-1" />
             This Weekend
           </Button>
           <Button
-            variant={dateFrom && dateTo ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
             onClick={() => applyQuickFilter('thisWeek')}
-            className="rounded-full text-xs sm:text-sm"
+            className={`rounded-full text-xs sm:text-sm transition-all ${
+              dateFrom && dateTo 
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent hover:from-teal-600 hover:to-cyan-600' 
+                : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+            }`}
           >
             <Clock className="w-3 h-3 mr-1" />
             This Week
           </Button>
           <Button
-            variant={priceMin === '0' && priceMax === '0' ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
             onClick={() => applyQuickFilter('free')}
-            className="rounded-full text-xs sm:text-sm"
+            className={`rounded-full text-xs sm:text-sm transition-all ${
+              priceMin === '0' && priceMax === '0' 
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent hover:from-teal-600 hover:to-cyan-600' 
+                : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+            }`}
           >
             <Tag className="w-3 h-3 mr-1" />
             Free Events
           </Button>
           <Button
-            variant={priceMin === '0.01' && priceMax === '' ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
             onClick={() => applyQuickFilter('paid')}
-            className="rounded-full text-xs sm:text-sm"
+            className={`rounded-full text-xs sm:text-sm transition-all ${
+              priceMin === '0.01' && priceMax === '' 
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent hover:from-teal-600 hover:to-cyan-600' 
+                : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+            }`}
           >
             <DollarSign className="w-3 h-3 mr-1" />
             Paid Events
           </Button>
           <Button
-            variant={sortBy === 'popularity' ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
             onClick={() => handleSortChange('popularity-desc')}
-            className="rounded-full text-xs sm:text-sm"
+            className={`rounded-full text-xs sm:text-sm transition-all ${
+              sortBy === 'popularity' 
+                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent hover:from-teal-600 hover:to-cyan-600' 
+                : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+            }`}
           >
             <Flame className="w-3 h-3 mr-1" />
             Popular
@@ -506,18 +526,26 @@ export function EventsList() {
               </div>
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                 <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className={viewMode === 'grid' ? 'bg-white shadow-sm' : ''}
+                  className={`transition-all ${
+                    viewMode === 'grid' 
+                      ? 'bg-white shadow-sm text-teal-600' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
                   <Grid3X3 className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant={viewMode === 'map' ? 'default' : 'ghost'}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('map')}
-                  className={viewMode === 'map' ? 'bg-white shadow-sm' : ''}
+                  className={`transition-all ${
+                    viewMode === 'map' 
+                      ? 'bg-white shadow-sm text-teal-600' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
                   <Map className="w-4 h-4" />
                 </Button>
@@ -667,37 +695,49 @@ export function EventsList() {
                     <div className="flex gap-2">
                       <Button
                         type="button"
-                        variant={priceMin === '' && priceMax === '' ? 'default' : 'outline'}
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setPriceMin('');
                           setPriceMax('');
                         }}
-                        className="flex-1"
+                        className={`flex-1 transition-all ${
+                          priceMin === '' && priceMax === ''
+                            ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent'
+                            : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+                        }`}
                       >
                         All
                       </Button>
                       <Button
                         type="button"
-                        variant={priceMin === '0' && priceMax === '0' ? 'default' : 'outline'}
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setPriceMin('0');
                           setPriceMax('0');
                         }}
-                        className="flex-1"
+                        className={`flex-1 transition-all ${
+                          priceMin === '0' && priceMax === '0'
+                            ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent'
+                            : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+                        }`}
                       >
                         Free
                       </Button>
                       <Button
                         type="button"
-                        variant={priceMin === '0.01' && priceMax === '' ? 'default' : 'outline'}
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setPriceMin('0.01');
                           setPriceMax('');
                         }}
-                        className="flex-1"
+                        className={`flex-1 transition-all ${
+                          priceMin === '0.01' && priceMax === ''
+                            ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white border-transparent'
+                            : 'text-gray-600 hover:text-teal-600 hover:border-teal-300'
+                        }`}
                       >
                         Paid
                       </Button>
