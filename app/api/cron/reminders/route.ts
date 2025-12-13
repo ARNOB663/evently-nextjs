@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Event from '@/lib/models/Event';
 import Notification from '@/lib/models/Notification';
-import User from '@/lib/models/User';
 import { sendEmail } from '@/lib/utils/email';
 
 // Secret key to protect cron endpoint
 const CRON_SECRET = process.env.CRON_SECRET || 'default-cron-secret';
+
+// Type for populated participant
+interface PopulatedParticipant {
+  _id: string;
+  fullName: string;
+  email: string;
+}
 
 // GET /api/cron/reminders - Send event reminders (called by cron job)
 export async function GET(req: NextRequest) {
@@ -35,14 +41,16 @@ export async function GET(req: NextRequest) {
     const errors: string[] = [];
 
     for (const event of upcomingEvents) {
-      for (const participant of event.participants) {
+      const participants = event.participants as unknown as PopulatedParticipant[];
+      for (const participant of participants) {
         try {
           // Create in-app notification
           await Notification.create({
-            userId: participant._id,
+            user: participant._id,
             type: 'reminder',
             title: 'Event Reminder',
             message: `${event.eventName} is happening tomorrow at ${event.time}!`,
+            relatedEvent: event._id,
             data: {
               eventId: event._id,
               eventName: event.eventName,
@@ -102,14 +110,16 @@ export async function POST(req: NextRequest) {
     }
 
     let remindersSent = 0;
+    const participants = event.participants as unknown as PopulatedParticipant[];
 
-    for (const participant of event.participants) {
+    for (const participant of participants) {
       try {
         await Notification.create({
-          userId: participant._id,
+          user: participant._id,
           type: 'reminder',
           title: 'Event Reminder',
           message: `Don't forget: ${event.eventName} at ${event.time}!`,
+          relatedEvent: event._id,
           data: {
             eventId: event._id,
             eventName: event.eventName,

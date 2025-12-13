@@ -64,7 +64,7 @@ export async function subscribeToPush(vapidPublicKey: string): Promise<PushSubsc
     // Create new subscription
     subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
     });
   }
 
@@ -189,11 +189,8 @@ export function formatNotificationForPush(notification: AppNotification): Notifi
     icon: notification.icon || '/icon-192x192.png',
     badge: notification.badge || '/badge-72x72.png',
     tag: notification.type,
-    renotify: true,
     requireInteraction: notification.type === 'event_reminder',
     data: notification.data,
-    actions: notification.actions,
-    vibrate: [200, 100, 200],
   };
 }
 

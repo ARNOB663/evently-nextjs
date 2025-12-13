@@ -117,10 +117,11 @@ export async function POST(
 
     // Create notification for the host
     await Notification.create({
-      userId: targetUserId,
+      user: targetUserId,
       type: 'follow',
       title: 'New Follower',
       message: `${currentUser.fullName} started following you`,
+      relatedUser: user.userId,
       data: {
         followerId: user.userId,
         followerName: currentUser.fullName,

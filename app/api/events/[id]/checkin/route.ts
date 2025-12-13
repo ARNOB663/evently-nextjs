@@ -4,6 +4,7 @@ import Event from '@/lib/models/Event';
 import Booking from '@/lib/models/Booking';
 import { requireAuth } from '@/lib/middleware/auth';
 import { parseQRCodeData } from '@/lib/utils/qrcode';
+import mongoose from 'mongoose';
 
 // POST /api/events/[id]/checkin - Check in a booking
 export async function POST(
@@ -92,7 +93,7 @@ export async function POST(
     // Perform check-in
     booking.checkedIn = true;
     booking.checkedInAt = new Date();
-    booking.checkedInBy = user.userId;
+    booking.checkedInBy = new mongoose.Types.ObjectId(user.userId);
     await booking.save();
 
     return NextResponse.json({

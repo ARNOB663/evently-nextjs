@@ -2,11 +2,12 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface INotification extends Document {
   user: mongoose.Types.ObjectId;
-  type: 'friend_request' | 'friend_accepted' | 'profile_visit' | 'friend_joined_event' | 'friend_became_host' | 'event_reminder' | 'message';
+  type: 'friend_request' | 'friend_accepted' | 'profile_visit' | 'friend_joined_event' | 'friend_became_host' | 'event_reminder' | 'message' | 'reminder' | 'follow' | 'new_event' | 'spot_available';
   title: string;
   message: string;
   relatedUser?: mongoose.Types.ObjectId;
   relatedEvent?: mongoose.Types.ObjectId;
+  data?: Record<string, any>;
   isRead: boolean;
   readAt?: Date;
   createdAt: Date;
@@ -23,7 +24,7 @@ const NotificationSchema: Schema = new Schema(
     },
     type: {
       type: String,
-      enum: ['friend_request', 'friend_accepted', 'profile_visit', 'friend_joined_event', 'friend_became_host', 'event_reminder', 'message'],
+      enum: ['friend_request', 'friend_accepted', 'profile_visit', 'friend_joined_event', 'friend_became_host', 'event_reminder', 'message', 'reminder', 'follow', 'new_event', 'spot_available'],
       required: true,
       index: true,
     },
@@ -44,6 +45,10 @@ const NotificationSchema: Schema = new Schema(
     relatedEvent: {
       type: Schema.Types.ObjectId,
       ref: 'Event',
+    },
+    data: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
     isRead: {
       type: Boolean,

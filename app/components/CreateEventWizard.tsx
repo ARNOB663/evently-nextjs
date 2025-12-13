@@ -156,10 +156,10 @@ export function CreateEventWizard({ onSubmit, onCancel, initialData }: CreateEve
     }
   };
 
-  const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
-    updateFormData('location', location.address);
-    updateFormData('latitude', location.lat);
-    updateFormData('longitude', location.lng);
+  const handleLocationChange = (lat: number, lng: number, address: string) => {
+    updateFormData('location', address);
+    updateFormData('latitude', lat);
+    updateFormData('longitude', lng);
   };
 
   const addTicketType = () => {
@@ -466,12 +466,10 @@ export function CreateEventWizard({ onSubmit, onCancel, initialData }: CreateEve
                     <Label>Pick on Map</Label>
                     <div className="mt-2 rounded-lg overflow-hidden border">
                       <LocationPicker
-                        onLocationSelect={handleLocationSelect}
-                        initialLocation={
-                          formData.latitude && formData.longitude
-                            ? { lat: formData.latitude, lng: formData.longitude }
-                            : undefined
-                        }
+                        onLocationChange={handleLocationChange}
+                        latitude={formData.latitude}
+                        longitude={formData.longitude}
+                        height="350px"
                       />
                     </div>
                   </div>

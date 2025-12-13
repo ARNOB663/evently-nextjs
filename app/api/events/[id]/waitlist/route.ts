@@ -87,7 +87,8 @@ export async function POST(
     }
 
     // Check if user is already a participant
-    if (event.participants.includes(user.userId)) {
+    const participantIds = event.participants.map((p: any) => p.toString());
+    if (participantIds.includes(user.userId)) {
       return NextResponse.json(
         { error: 'You are already a participant' },
         { status: 400 }
