@@ -36,13 +36,16 @@ export function Navbar() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[95%] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl px-2 sm:px-4"
+      className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
+        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+      }`}
     >
-      <div
-        className={`relative bg-white rounded-full shadow-lg transition-all duration-300 ${
-          isScrolled ? 'shadow-xl' : 'shadow-lg'
-        }`}
-      >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          className={`relative bg-white rounded-full shadow-lg transition-all duration-300 ${
+            isScrolled ? 'shadow-xl border border-gray-100' : 'shadow-lg'
+          }`}
+        >
         {/* Animated Border */}
         <motion.div
           className="absolute inset-0 rounded-full p-[2px]"
@@ -226,6 +229,7 @@ export function Navbar() {
             <Menu className="w-6 h-6" />
           </button>
         </div>
+      </div>
       </div>
 
       {/* Mobile Menu Overlay */}
