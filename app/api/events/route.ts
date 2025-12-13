@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
         { eventName: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { eventType: { $regex: search, $options: 'i' } },
+        { location: { $regex: search, $options: 'i' } },
       ];
     }
 
