@@ -26,9 +26,18 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
+    const category = searchParams.get('category');
+    const tags = searchParams.getAll('tags');
+    const includeDrafts = searchParams.get('includeDrafts') === 'true';
 
     // Build query
     const query: any = {};
+
+    // Exclude drafts unless specifically requested (usually only for host's own events)
+    if (!includeDrafts) {
+      query.isDraft = { $ne: true };
+      query.status = { $ne: 'draft' };
+    }
 
     if (eventTypes.length > 0) {
       query.eventType = { $in: eventTypes };
@@ -37,9 +46,18 @@ export async function GET(req: NextRequest) {
     }
     
     if (location) query.location = { $regex: location, $options: 'i' };
-    if (status) query.status = status;
+    if (status && status !== 'draft') query.status = status;
     if (hostId && mongoose.Types.ObjectId.isValid(hostId)) {
       query.hostId = new mongoose.Types.ObjectId(hostId);
+      // Allow hosts to see their own drafts
+      if (includeDrafts) {
+        delete query.isDraft;
+        delete query.status;
+      }
+    }
+    if (category) query.category = category;
+    if (tags.length > 0) {
+      query.tags = { $in: tags };
     }
     
     // Date range filter
@@ -80,6 +98,8 @@ export async function GET(req: NextRequest) {
         { description: { $regex: search, $options: 'i' } },
         { eventType: { $regex: search, $options: 'i' } },
         { location: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -177,6 +197,11 @@ export async function POST(req: NextRequest) {
       maxParticipants,
       joiningFee = 0,
       image,
+      tags,
+      category,
+      isDraft,
+      status: eventStatus,
+      recurrence,
     } = body;
 
     // Validation
@@ -201,6 +226,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Determine status
+    const finalStatus = isDraft ? 'draft' : (eventStatus || 'open');
+
     // Create event
     const event = await Event.create({
       hostId: user.userId,
@@ -216,9 +244,13 @@ export async function POST(req: NextRequest) {
       maxParticipants,
       joiningFee,
       image: image || '',
-      status: 'open',
+      status: finalStatus,
       currentParticipants: 0,
       participants: [],
+      tags: tags || [],
+      category: category || '',
+      isDraft: isDraft || false,
+      recurrence: recurrence || { enabled: false },
     });
 
     const populatedEvent = await Event.findById(event._id)

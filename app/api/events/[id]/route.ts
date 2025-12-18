@@ -83,6 +83,10 @@ export async function PUT(
       joiningFee,
       image,
       status,
+      tags,
+      category,
+      isDraft,
+      recurrence,
     } = body;
 
     // Build update object
@@ -99,9 +103,13 @@ export async function PUT(
     if (maxParticipants) updateData.maxParticipants = maxParticipants;
     if (joiningFee !== undefined) updateData.joiningFee = joiningFee;
     if (image !== undefined) updateData.image = image;
-    if (status && ['open', 'full', 'cancelled', 'completed'].includes(status)) {
+    if (status && ['open', 'full', 'cancelled', 'completed', 'draft'].includes(status)) {
       updateData.status = status;
     }
+    if (tags !== undefined) updateData.tags = tags;
+    if (category !== undefined) updateData.category = category;
+    if (isDraft !== undefined) updateData.isDraft = isDraft;
+    if (recurrence !== undefined) updateData.recurrence = recurrence;
 
     const updatedEvent = await Event.findByIdAndUpdate(
       id,

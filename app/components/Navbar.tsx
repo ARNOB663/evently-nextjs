@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User, MessageSquare } from 'lucide-react';
+import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User, MessageSquare, Bookmark } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 import { Notifications } from './Notifications';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,10 +43,10 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          className={`relative bg-white/95 backdrop-blur-md rounded-full transition-all duration-300 ${
+          className={`relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-full transition-all duration-300 ${
             isScrolled 
-              ? 'shadow-2xl border border-gray-200/50 scale-[0.98]' 
-              : 'shadow-lg border border-white/20'
+              ? 'shadow-2xl border border-gray-200/50 dark:border-gray-700/50 scale-[0.98]' 
+              : 'shadow-lg border border-white/20 dark:border-gray-700/20'
           }`}
           animate={{
             y: isScrolled ? 0 : 0,
@@ -67,7 +68,7 @@ export function Navbar() {
             ease: 'linear',
           }}
         >
-          <div className="w-full h-full bg-white rounded-full" />
+          <div className="w-full h-full bg-white dark:bg-gray-900 rounded-full" />
         </motion.div>
 
         <div className="relative flex items-center justify-between px-3 sm:px-4 md:px-5 lg:px-6 py-2 sm:py-2.5 gap-2 md:gap-3">
@@ -95,7 +96,7 @@ export function Navbar() {
                     />
                   </svg>
                 </div>
-                <span className="hidden sm:inline text-base sm:text-lg md:text-xl text-gray-900 whitespace-nowrap">
+                <span className="hidden sm:inline text-base sm:text-lg md:text-xl text-gray-900 dark:text-white whitespace-nowrap">
                   Events & Activities
                 </span>
               </div>
@@ -111,20 +112,20 @@ export function Navbar() {
           >
             <Link
               href="/events"
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
+              className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200 whitespace-nowrap text-sm"
             >
               Browse Events
             </Link>
             <a
               href="#how-it-works"
-              className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
+              className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200 whitespace-nowrap text-sm"
             >
               Features
             </a>
             {isAuthenticated && user && (user.role === 'host' || user.role === 'admin') && (
               <Link
                 href="/dashboard"
-                className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
+                className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200 whitespace-nowrap text-sm"
               >
                 Dashboard
               </Link>
@@ -132,7 +133,7 @@ export function Navbar() {
             {!isAuthenticated && (
               <Link
                 href="/host-login"
-                className="text-gray-700 hover:text-teal-600 transition-colors duration-200 whitespace-nowrap text-sm"
+                className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200 whitespace-nowrap text-sm"
               >
                 Host Login
               </Link>
@@ -155,7 +156,7 @@ export function Navbar() {
                   {/* Discover Link */}
                   <Link
                     href="/discover"
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors duration-200"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors duration-200"
                     title="Discover"
                   >
                     <Users className="w-4 h-4" />
@@ -164,7 +165,7 @@ export function Navbar() {
                   {/* Messages Link */}
                   <Link
                     href="/messages"
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors duration-200 relative"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors duration-200 relative"
                     title="Messages"
                   >
                     <MessageSquare className="w-4 h-4" />
@@ -173,11 +174,20 @@ export function Navbar() {
                   {/* Friends Link */}
                   <Link
                     href="/friends"
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-colors duration-200 relative"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors duration-200 relative"
                     title="Friends"
                   >
                     <Users className="w-4 h-4" />
                     <span className="hidden xl:inline text-sm">Friends</span>
+                  </Link>
+                  {/* Saved Events Link */}
+                  <Link
+                    href="/saved-events"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors duration-200 relative"
+                    title="Saved Events"
+                  >
+                    <Bookmark className="w-4 h-4" />
+                    <span className="hidden xl:inline text-sm">Saved</span>
                   </Link>
                 </div>
                 {/* User Info */}
@@ -195,10 +205,12 @@ export function Navbar() {
                     </div>
                   )}
                 </Link>
+                {/* Theme Toggle */}
+                <ThemeToggle />
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="text-gray-700 hover:text-red-600 transition-colors duration-200 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50"
+                  className="text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -207,10 +219,12 @@ export function Navbar() {
               </>
             ) : (
               <>
+                {/* Theme Toggle */}
+                <ThemeToggle />
                 {/* Login Button */}
                 <Link
                   href="/login"
-                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium text-sm whitespace-nowrap"
+                  className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200 font-medium text-sm whitespace-nowrap"
                 >
                   Login
                 </Link>
@@ -357,6 +371,20 @@ export function Navbar() {
                       >
                         <Users className="w-5 h-5 text-teal-600" />
                         <span className="text-gray-700 group-hover:text-teal-600 font-medium">Friends</span>
+                      </motion.div>
+                    </Link>
+                    <Link
+                      href="/saved-events"
+                      onClick={handleLinkClick}
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.29 }}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 transition-all group"
+                      >
+                        <Bookmark className="w-5 h-5 text-teal-600" />
+                        <span className="text-gray-700 group-hover:text-teal-600 font-medium">Saved Events</span>
                       </motion.div>
                     </Link>
                   </>

@@ -19,6 +19,11 @@ import {
   MapPin,
   Tag,
   BarChart3,
+  Copy,
+  Download,
+  FileText,
+  Repeat,
+  Save,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,9 +63,17 @@ interface Event {
   currentParticipants: number;
   joiningFee: number;
   image?: string;
-  status: 'open' | 'full' | 'cancelled' | 'completed';
-  participants: Array<{ _id: string; fullName: string; profileImage?: string }>;
+  status: 'open' | 'full' | 'cancelled' | 'completed' | 'draft';
+  participants: Array<{ _id: string; fullName: string; profileImage?: string; email?: string }>;
   createdAt: string;
+  tags?: string[];
+  category?: string;
+  isDraft?: boolean;
+  recurrence?: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly';
+    endDate?: string;
+  };
 }
 
 interface EventFormData {
@@ -76,6 +89,14 @@ interface EventFormData {
   maxParticipants: string;
   joiningFee: string;
   image: string;
+  tags: string;
+  category: string;
+  isDraft: boolean;
+  recurrence: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly';
+    endDate: string;
+  };
 }
 
 export function HostDashboard() {
@@ -116,13 +137,21 @@ export function HostDashboard() {
     maxParticipants: '10',
     joiningFee: '0',
     image: '',
+    tags: '',
+    category: '',
+    isDraft: false,
+    recurrence: {
+      enabled: false,
+      frequency: 'weekly',
+      endDate: '',
+    },
   });
 
   // Fetch events for the host
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/events?hostId=${user?._id}`);
+      const response = await fetch(`/api/events?hostId=${user?._id}&includeDrafts=true`);
       const data = await response.json();
 
       if (response.ok) {
@@ -234,10 +263,27 @@ export function HostDashboard() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...formData,
+          eventName: formData.eventName,
+          eventType: formData.eventType,
+          description: formData.description,
+          date: formData.date,
+          time: formData.time,
+          location: formData.location,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           minParticipants: parseInt(formData.minParticipants),
           maxParticipants: parseInt(formData.maxParticipants),
           joiningFee: parseFloat(formData.joiningFee),
+          image: formData.image,
+          tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
+          category: formData.category,
+          isDraft: formData.isDraft,
+          status: formData.isDraft ? 'draft' : 'open',
+          recurrence: formData.recurrence.enabled ? {
+            enabled: true,
+            frequency: formData.recurrence.frequency,
+            endDate: formData.recurrence.endDate || undefined,
+          } : undefined,
         }),
       });
 
@@ -283,10 +329,27 @@ export function HostDashboard() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...formData,
+          eventName: formData.eventName,
+          eventType: formData.eventType,
+          description: formData.description,
+          date: formData.date,
+          time: formData.time,
+          location: formData.location,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           minParticipants: parseInt(formData.minParticipants),
           maxParticipants: parseInt(formData.maxParticipants),
           joiningFee: parseFloat(formData.joiningFee),
+          image: formData.image,
+          tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
+          category: formData.category,
+          isDraft: formData.isDraft,
+          status: formData.isDraft ? 'draft' : undefined,
+          recurrence: formData.recurrence.enabled ? {
+            enabled: true,
+            frequency: formData.recurrence.frequency,
+            endDate: formData.recurrence.endDate || undefined,
+          } : { enabled: false },
         }),
       });
 
@@ -351,8 +414,93 @@ export function HostDashboard() {
       maxParticipants: '10',
       joiningFee: '0',
       image: '',
+      tags: '',
+      category: '',
+      isDraft: false,
+      recurrence: {
+        enabled: false,
+        frequency: 'weekly',
+        endDate: '',
+      },
     });
     setError(null);
+  };
+
+  // Handle duplicate event
+  const handleDuplicateEvent = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        fetchEvents();
+        alert('Event duplicated successfully! It has been saved as a draft.');
+      } else {
+        setError(data.error || 'Failed to duplicate event');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to duplicate event');
+    }
+  };
+
+  // Handle export attendees
+  const handleExportAttendees = async (event: Event) => {
+    try {
+      const response = await fetch(`/api/events/${event._id}/export`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${event.eventName.replace(/[^a-z0-9]/gi, '_')}_attendees.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to export attendees');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to export attendees');
+    }
+  };
+
+  // Publish draft event
+  const handlePublishDraft = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isDraft: false, status: 'open' }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        fetchEvents();
+      } else {
+        setError(data.error || 'Failed to publish event');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to publish event');
+    }
   };
 
   // Open edit dialog
@@ -371,6 +519,14 @@ export function HostDashboard() {
       maxParticipants: event.maxParticipants.toString(),
       joiningFee: event.joiningFee.toString(),
       image: event.image || '',
+      tags: event.tags?.join(', ') || '',
+      category: event.category || '',
+      isDraft: event.isDraft || false,
+      recurrence: {
+        enabled: event.recurrence?.enabled || false,
+        frequency: event.recurrence?.frequency || 'weekly',
+        endDate: event.recurrence?.endDate ? new Date(event.recurrence.endDate).toISOString().split('T')[0] : '',
+      },
     });
     setIsEditDialogOpen(true);
   };
@@ -545,11 +701,42 @@ export function HostDashboard() {
                   )}
                   <div className="p-4 sm:p-6">
                     <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-2">
-                        {event.eventName}
-                      </h3>
-                      <Badge className={getStatusColor(event.status)}>{event.status}</Badge>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white line-clamp-2">
+                          {event.eventName}
+                        </h3>
+                        {event.recurrence?.enabled && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-teal-600 dark:text-teal-400">
+                            <Repeat className="w-3 h-3" />
+                            <span className="capitalize">{event.recurrence.frequency}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge className={getStatusColor(event.status)}>{event.status}</Badge>
+                        {event.isDraft && (
+                          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                            <FileText className="w-3 h-3 mr-1" />
+                            Draft
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                    {event.tags && event.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {event.tags.slice(0, 3).map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {event.tags.length > 3 && (
+                          <span className="text-xs text-gray-500">+{event.tags.length - 3} more</span>
+                        )}
+                      </div>
+                    )}
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-gray-600">
                         <Tag className="w-4 h-4 mr-2" />
@@ -585,6 +772,7 @@ export function HostDashboard() {
                         size="sm"
                         onClick={() => openViewDialog(event)}
                         className="flex-1 sm:flex-none"
+                        title="View Event"
                       >
                         <Eye className="w-4 h-4 mr-1" />
                         View
@@ -594,15 +782,50 @@ export function HostDashboard() {
                         size="sm"
                         onClick={() => openEditDialog(event)}
                         className="flex-1 sm:flex-none"
+                        title="Edit Event"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
                       </Button>
                       <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDuplicateEvent(event._id)}
+                        className="flex-1 sm:flex-none"
+                        title="Duplicate Event"
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy
+                      </Button>
+                      {event.currentParticipants > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleExportAttendees(event)}
+                          className="flex-1 sm:flex-none"
+                          title="Export Attendees"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Export
+                        </Button>
+                      )}
+                      {event.isDraft && (
+                        <Button
+                          size="sm"
+                          onClick={() => handlePublishDraft(event._id)}
+                          className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+                          title="Publish Draft"
+                        >
+                          <Save className="w-4 h-4 mr-1" />
+                          Publish
+                        </Button>
+                      )}
+                      <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDeleteEvent(event._id)}
                         className="flex-1 sm:flex-none"
+                        title="Delete Event"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
                         Delete
@@ -815,10 +1038,35 @@ function EventForm({
   uploading: boolean;
   uploadError: string | null;
 }) {
+  const categoryOptions = [
+    'Technology', 'Business', 'Music', 'Arts', 'Sports', 'Food & Drink',
+    'Health & Wellness', 'Education', 'Networking', 'Community', 'Other'
+  ];
+
   return (
     <div className="space-y-5 py-4">
+      {/* Draft toggle */}
+      <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+        <div className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+          <div>
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Save as Draft</p>
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">Draft events won't be visible to users</p>
+          </div>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.isDraft}
+            onChange={(e) => setFormData({ ...formData, isDraft: e.target.checked })}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 dark:peer-focus:ring-yellow-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-yellow-500"></div>
+        </label>
+      </div>
+
       <div>
-        <Label htmlFor="eventName" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="eventName" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
           Event Name *
         </Label>
         <Input
@@ -826,27 +1074,59 @@ function EventForm({
           value={formData.eventName}
           onChange={(e) => setFormData({ ...formData, eventName: e.target.value })}
           placeholder="Enter event name"
-          className="w-full text-gray-900 placeholder:text-gray-400"
+          className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
           required
         />
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="eventType" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+            Event Type *
+          </Label>
+          <Input
+            id="eventType"
+            value={formData.eventType}
+            onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
+            placeholder="e.g., Conference, Workshop"
+            className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="category" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+            Category
+          </Label>
+          <select
+            id="category"
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            className="w-full h-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-800"
+          >
+            <option value="">Select category</option>
+            {categoryOptions.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div>
-        <Label htmlFor="eventType" className="text-sm font-semibold text-gray-700 mb-2 block">
-          Event Type *
+        <Label htmlFor="tags" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+          Tags (comma separated)
         </Label>
         <Input
-          id="eventType"
-          value={formData.eventType}
-          onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
-          placeholder="e.g., Conference, Workshop, Meetup"
-          className="w-full text-gray-900 placeholder:text-gray-400"
-          required
+          id="tags"
+          value={formData.tags}
+          onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+          placeholder="e.g., networking, tech, startup"
+          className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
         />
+        <p className="mt-1 text-xs text-gray-500">Add tags to help people discover your event</p>
       </div>
 
       <div>
-        <Label htmlFor="description" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="description" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
           Description *
         </Label>
         <textarea
@@ -854,14 +1134,14 @@ function EventForm({
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Enter event description"
-          className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
+          className="w-full min-h-[120px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-800 placeholder:text-gray-400"
           required
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="date" className="text-sm font-semibold text-gray-700 mb-2 block">
+          <Label htmlFor="date" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
             Date *
           </Label>
           <Input
@@ -869,12 +1149,12 @@ function EventForm({
             type="date"
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            className="w-full text-gray-900 placeholder:text-gray-400"
+            className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
             required
           />
         </div>
         <div>
-          <Label htmlFor="time" className="text-sm font-semibold text-gray-700 mb-2 block">
+          <Label htmlFor="time" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
             Time *
           </Label>
           <Input
@@ -882,14 +1162,14 @@ function EventForm({
             type="time"
             value={formData.time}
             onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-            className="w-full text-gray-900 placeholder:text-gray-400"
+            className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
             required
           />
         </div>
       </div>
 
       <div>
-        <Label htmlFor="location" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="location" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
           Location *
         </Label>
         <Input
@@ -897,7 +1177,7 @@ function EventForm({
           value={formData.location}
           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
           placeholder="Enter event location or click on map"
-          className="w-full text-gray-900 placeholder:text-gray-400 mb-3"
+          className="w-full text-gray-900 dark:text-white placeholder:text-gray-400 mb-3"
           required
         />
         <LocationPicker
@@ -924,7 +1204,7 @@ function EventForm({
         <div>
           <Label
             htmlFor="minParticipants"
-            className="text-sm font-semibold text-gray-700 mb-2 block"
+            className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block"
           >
             Min Participants *
           </Label>
@@ -934,14 +1214,14 @@ function EventForm({
             min="1"
             value={formData.minParticipants}
             onChange={(e) => setFormData({ ...formData, minParticipants: e.target.value })}
-            className="w-full text-gray-900 placeholder:text-gray-400"
+            className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
             required
           />
         </div>
         <div>
           <Label
             htmlFor="maxParticipants"
-            className="text-sm font-semibold text-gray-700 mb-2 block"
+            className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block"
           >
             Max Participants *
           </Label>
@@ -951,14 +1231,14 @@ function EventForm({
             min="1"
             value={formData.maxParticipants}
             onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
-            className="w-full text-gray-900 placeholder:text-gray-400"
+            className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
             required
           />
         </div>
       </div>
 
       <div>
-        <Label htmlFor="joiningFee" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="joiningFee" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
           Joining Fee ($) *
         </Label>
         <Input
@@ -968,13 +1248,75 @@ function EventForm({
           step="0.01"
           value={formData.joiningFee}
           onChange={(e) => setFormData({ ...formData, joiningFee: e.target.value })}
-          className="w-full text-gray-900 placeholder:text-gray-400"
+          className="w-full text-gray-900 dark:text-white placeholder:text-gray-400"
           required
         />
       </div>
 
+      {/* Recurring Event Section */}
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Repeat className="w-5 h-5 text-teal-600" />
+            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Recurring Event</Label>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.recurrence.enabled}
+              onChange={(e) => setFormData({
+                ...formData,
+                recurrence: { ...formData.recurrence, enabled: e.target.checked }
+              })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-500"></div>
+          </label>
+        </div>
+        
+        {formData.recurrence.enabled && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                Frequency
+              </Label>
+              <select
+                value={formData.recurrence.frequency}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  recurrence: {
+                    ...formData.recurrence,
+                    frequency: e.target.value as 'daily' | 'weekly' | 'biweekly' | 'monthly'
+                  }
+                })}
+                className="w-full h-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-800"
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                End Date (Optional)
+              </Label>
+              <Input
+                type="date"
+                value={formData.recurrence.endDate}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  recurrence: { ...formData.recurrence, endDate: e.target.value }
+                })}
+                className="w-full text-gray-900 dark:text-white"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       <div>
-        <Label htmlFor="image" className="text-sm font-semibold text-gray-700 mb-2 block">
+        <Label htmlFor="image" className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
           Event Image
         </Label>
         <div className="space-y-2">
