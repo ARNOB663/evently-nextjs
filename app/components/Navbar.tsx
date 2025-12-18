@@ -36,19 +36,24 @@ export function Navbar() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className={`fixed top-0 left-0 right-0 z-50 w-full py-3 sm:py-4 transition-all duration-300 ${
-        isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg py-2 sm:py-3' : 'bg-transparent'
+      className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${
+        isScrolled ? 'py-2 sm:py-3' : 'py-3 sm:py-4'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div
-          className={`relative bg-white rounded-full shadow-lg transition-all duration-300 ${
-            isScrolled ? 'shadow-xl border border-gray-100' : 'shadow-lg'
+        <motion.div
+          className={`relative bg-white/95 backdrop-blur-md rounded-full transition-all duration-300 ${
+            isScrolled 
+              ? 'shadow-2xl border border-gray-200/50 scale-[0.98]' 
+              : 'shadow-lg border border-white/20'
           }`}
+          animate={{
+            y: isScrolled ? 0 : 0,
+          }}
         >
         {/* Animated Border */}
         <motion.div
-          className="absolute inset-0 rounded-full p-[2px]"
+          className="absolute inset-0 rounded-full p-[2px] -z-10"
           style={{
             background: 'linear-gradient(90deg, #14b8a6, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #14b8a6)',
             backgroundSize: '200% 100%',
@@ -229,7 +234,7 @@ export function Navbar() {
             <Menu className="w-6 h-6" />
           </button>
         </div>
-      </div>
+      </motion.div>
       </div>
 
       {/* Mobile Menu Overlay */}
