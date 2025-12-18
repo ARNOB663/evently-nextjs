@@ -99,8 +99,18 @@ export async function PUT(
     if (maxParticipants) updateData.maxParticipants = maxParticipants;
     if (joiningFee !== undefined) updateData.joiningFee = joiningFee;
     if (image !== undefined) updateData.image = image;
-    if (status && ['open', 'full', 'cancelled', 'completed'].includes(status)) {
+    if (status && ['open', 'full', 'cancelled', 'completed', 'draft'].includes(status)) {
       updateData.status = status;
+    }
+    if (body.tags !== undefined) {
+      updateData.tags = Array.isArray(body.tags) ? body.tags : [];
+    }
+    if (body.isDraft !== undefined) {
+      updateData.isDraft = body.isDraft;
+      // If publishing from draft, set status to open
+      if (!body.isDraft && event.isDraft) {
+        updateData.status = 'open';
+      }
     }
 
     const updatedEvent = await Event.findByIdAndUpdate(

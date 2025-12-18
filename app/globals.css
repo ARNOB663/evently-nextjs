@@ -19,6 +19,27 @@
   --error: #ef4444; /* red-500 */
   --warning: #f59e0b; /* amber-500 */
   --info: #3b82f6; /* blue-500 */
+
+  /* Card and surface colors */
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --surface-bg: #f9fafb;
+  --muted: #6b7280;
+  --muted-foreground: #9ca3af;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --surface-bg: #1e293b;
+  --muted: #94a3b8;
+  --muted-foreground: #64748b;
+  
+  /* Adjust brand colors for dark mode */
+  --brand-primary: #2dd4bf; /* teal-400 */
+  --brand-secondary: #22d3ee; /* cyan-400 */
 }
 
 @theme inline {
@@ -28,15 +49,82 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Light mode (default) */
+.light {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode specific styles */
+.dark body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Dark mode card styles */
+.dark .bg-white {
+  background-color: var(--card-bg) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: var(--surface-bg) !important;
+}
+
+.dark .border-gray-200 {
+  border-color: var(--card-border) !important;
+}
+
+.dark .text-gray-900 {
+  color: var(--foreground) !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-700 {
+  color: var(--muted) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--muted-foreground) !important;
+}
+
+/* Dark mode input styles */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--card-bg);
+  border-color: var(--card-border);
+  color: var(--foreground);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* Dark mode shadows */
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode gradients */
+.dark .from-gray-50 {
+  --tw-gradient-from: var(--surface-bg) !important;
+}
+
+.dark .to-gray-50 {
+  --tw-gradient-to: var(--surface-bg) !important;
+}
+
+.dark .via-white {
+  --tw-gradient-via: var(--card-bg) !important;
 }

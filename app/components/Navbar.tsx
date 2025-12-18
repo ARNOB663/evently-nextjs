@@ -1,11 +1,13 @@
 'use client';
 
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User, MessageSquare } from 'lucide-react';
+import { Menu, X, Calendar, Home, Users, LayoutDashboard, LogIn, UserPlus, LogOut, User, MessageSquare, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { Notifications } from './Notifications';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -195,10 +197,12 @@ export function Navbar() {
                     </div>
                   )}
                 </Link>
+                {/* Theme Toggle */}
+                <ThemeToggle />
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="text-gray-700 hover:text-red-600 transition-colors duration-200 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50"
+                  className="text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -207,10 +211,12 @@ export function Navbar() {
               </>
             ) : (
               <>
+                {/* Theme Toggle */}
+                <ThemeToggle />
                 {/* Login Button */}
                 <Link
                   href="/login"
-                  className="text-gray-700 hover:text-teal-600 transition-colors duration-200 font-medium text-sm whitespace-nowrap"
+                  className="text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200 font-medium text-sm whitespace-nowrap"
                 >
                   Login
                 </Link>

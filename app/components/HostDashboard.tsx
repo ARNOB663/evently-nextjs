@@ -19,6 +19,10 @@ import {
   MapPin,
   Tag,
   BarChart3,
+  Copy,
+  Download,
+  FileText,
+  Save,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,9 +62,11 @@ interface Event {
   currentParticipants: number;
   joiningFee: number;
   image?: string;
-  status: 'open' | 'full' | 'cancelled' | 'completed';
+  status: 'open' | 'full' | 'cancelled' | 'completed' | 'draft';
   participants: Array<{ _id: string; fullName: string; profileImage?: string }>;
   createdAt: string;
+  tags?: string[];
+  isDraft?: boolean;
 }
 
 interface EventFormData {
@@ -76,6 +82,8 @@ interface EventFormData {
   maxParticipants: string;
   joiningFee: string;
   image: string;
+  tags: string;
+  isDraft: boolean;
 }
 
 export function HostDashboard() {
@@ -116,6 +124,8 @@ export function HostDashboard() {
     maxParticipants: '10',
     joiningFee: '0',
     image: '',
+    tags: '',
+    isDraft: false,
   });
 
   // Fetch events for the host
@@ -238,6 +248,8 @@ export function HostDashboard() {
           minParticipants: parseInt(formData.minParticipants),
           maxParticipants: parseInt(formData.maxParticipants),
           joiningFee: parseFloat(formData.joiningFee),
+          tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
+          isDraft: formData.isDraft,
         }),
       });
 
@@ -287,6 +299,8 @@ export function HostDashboard() {
           minParticipants: parseInt(formData.minParticipants),
           maxParticipants: parseInt(formData.maxParticipants),
           joiningFee: parseFloat(formData.joiningFee),
+          tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
+          isDraft: formData.isDraft,
         }),
       });
 
@@ -351,6 +365,8 @@ export function HostDashboard() {
       maxParticipants: '10',
       joiningFee: '0',
       image: '',
+      tags: '',
+      isDraft: false,
     });
     setError(null);
   };
@@ -371,8 +387,88 @@ export function HostDashboard() {
       maxParticipants: event.maxParticipants.toString(),
       joiningFee: event.joiningFee.toString(),
       image: event.image || '',
+      tags: event.tags?.join(', ') || '',
+      isDraft: event.isDraft || false,
     });
     setIsEditDialogOpen(true);
+  };
+
+  // Handle duplicate event
+  const handleDuplicateEvent = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        fetchEvents();
+        alert('Event duplicated successfully! It has been saved as a draft.');
+      } else {
+        setError(data.error || 'Failed to duplicate event');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to duplicate event');
+    }
+  };
+
+  // Handle export attendees
+  const handleExportAttendees = async (eventId: string, eventName: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}/export`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${eventName.replace(/[^a-zA-Z0-9]/g, '_')}_attendees.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to export attendees');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to export attendees');
+    }
+  };
+
+  // Handle publish draft
+  const handlePublishDraft = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          isDraft: false,
+          status: 'open',
+        }),
+      });
+
+      if (response.ok) {
+        fetchEvents();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to publish event');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to publish event');
+    }
   };
 
   // Open view dialog
@@ -392,6 +488,8 @@ export function HostDashboard() {
         return 'bg-red-100 text-red-800 border-red-200';
       case 'completed':
         return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'draft':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -578,7 +676,33 @@ export function HostDashboard() {
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{event.description}</p>
+                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">{event.description}</p>
+                    {/* Tags */}
+                    {event.tags && event.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {event.tags.slice(0, 3).map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs bg-teal-50 text-teal-700 border-teal-200">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {event.tags.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{event.tags.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {/* Draft Publish Button */}
+                    {event.isDraft && (
+                      <Button
+                        size="sm"
+                        onClick={() => handlePublishDraft(event._id)}
+                        className="w-full mb-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white"
+                      >
+                        <Save className="w-4 h-4 mr-1" />
+                        Publish Event
+                      </Button>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
@@ -598,6 +722,30 @@ export function HostDashboard() {
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDuplicateEvent(event._id)}
+                        className="flex-1 sm:flex-none"
+                        title="Duplicate Event"
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {event.currentParticipants > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleExportAttendees(event._id, event.eventName)}
+                          className="flex-1 sm:flex-none"
+                          title="Export Attendees CSV"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Export
+                        </Button>
+                      )}
                       <Button
                         variant="destructive"
                         size="sm"
@@ -974,6 +1122,20 @@ function EventForm({
       </div>
 
       <div>
+        <Label htmlFor="tags" className="text-sm font-semibold text-gray-700 mb-2 block">
+          Tags (comma-separated)
+        </Label>
+        <Input
+          id="tags"
+          value={formData.tags}
+          onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+          placeholder="e.g., outdoor, music, networking"
+          className="w-full text-gray-900 placeholder:text-gray-400"
+        />
+        <p className="text-xs text-gray-500 mt-1">Add tags to help users find your event</p>
+      </div>
+
+      <div>
         <Label htmlFor="image" className="text-sm font-semibold text-gray-700 mb-2 block">
           Event Image
         </Label>
@@ -1017,6 +1179,22 @@ function EventForm({
               </Button>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <input
+          type="checkbox"
+          id="isDraft"
+          checked={formData.isDraft}
+          onChange={(e) => setFormData({ ...formData, isDraft: e.target.checked })}
+          className="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
+        />
+        <div>
+          <Label htmlFor="isDraft" className="text-sm font-semibold text-gray-700 cursor-pointer">
+            Save as Draft
+          </Label>
+          <p className="text-xs text-gray-500">Draft events won't be visible to users until published</p>
         </div>
       </div>
     </div>

@@ -21,6 +21,11 @@ export async function GET(req: NextRequest) {
     const hostId = searchParams.get('hostId');
     const priceMin = searchParams.get('priceMin');
     const priceMax = searchParams.get('priceMax');
+    const tags = searchParams.getAll('tags');
+    const tag = searchParams.get('tag');
+    const includeDrafts = searchParams.get('includeDrafts') === 'true';
+    const onlyDrafts = searchParams.get('onlyDrafts') === 'true';
+    const savedBy = searchParams.get('savedBy');
     const sortBy = searchParams.get('sortBy') || 'date';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
     const page = parseInt(searchParams.get('page') || '1');
@@ -29,6 +34,13 @@ export async function GET(req: NextRequest) {
 
     // Build query
     const query: any = {};
+    
+    // By default, exclude drafts unless specifically requested
+    if (onlyDrafts) {
+      query.isDraft = true;
+    } else if (!includeDrafts) {
+      query.isDraft = { $ne: true };
+    }
 
     if (eventTypes.length > 0) {
       query.eventType = { $in: eventTypes };
@@ -80,7 +92,20 @@ export async function GET(req: NextRequest) {
         { description: { $regex: search, $options: 'i' } },
         { eventType: { $regex: search, $options: 'i' } },
         { location: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } },
       ];
+    }
+
+    // Tags filter
+    if (tags.length > 0) {
+      query.tags = { $in: tags };
+    } else if (tag) {
+      query.tags = tag;
+    }
+
+    // Saved by user filter
+    if (savedBy && mongoose.Types.ObjectId.isValid(savedBy)) {
+      query.savedBy = new mongoose.Types.ObjectId(savedBy);
     }
 
     // Build sort object
@@ -177,6 +202,9 @@ export async function POST(req: NextRequest) {
       maxParticipants,
       joiningFee = 0,
       image,
+      tags = [],
+      isDraft = false,
+      recurrence,
     } = body;
 
     // Validation
@@ -216,9 +244,13 @@ export async function POST(req: NextRequest) {
       maxParticipants,
       joiningFee,
       image: image || '',
-      status: 'open',
+      status: isDraft ? 'draft' : 'open',
+      isDraft,
+      tags: Array.isArray(tags) ? tags : [],
+      recurrence: recurrence || { enabled: false },
       currentParticipants: 0,
       participants: [],
+      savedBy: [],
     });
 
     const populatedEvent = await Event.findById(event._id)

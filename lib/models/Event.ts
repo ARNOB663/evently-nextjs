@@ -17,6 +17,14 @@ export interface IAgendaItem {
   speaker?: string;
 }
 
+export interface IRecurrence {
+  enabled: boolean;
+  pattern: 'daily' | 'weekly' | 'biweekly' | 'monthly';
+  endDate?: Date;
+  daysOfWeek?: number[]; // 0-6 for Sunday-Saturday
+  parentEventId?: mongoose.Types.ObjectId;
+}
+
 export interface IEvent extends Document {
   hostId: mongoose.Types.ObjectId;
   eventName: string;
@@ -34,10 +42,15 @@ export interface IEvent extends Document {
   joiningFee: number;
   image?: string;
   images?: string[];
-  status: 'open' | 'full' | 'cancelled' | 'completed';
+  status: 'open' | 'full' | 'cancelled' | 'completed' | 'draft';
   participants: mongoose.Types.ObjectId[];
   ticketTypes?: ITicketType[];
   agenda?: IAgendaItem[];
+  // New fields
+  tags?: string[];
+  isDraft: boolean;
+  recurrence?: IRecurrence;
+  savedBy?: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -139,10 +152,36 @@ const EventSchema: Schema = new Schema(
     ],
     status: {
       type: String,
-      enum: ['open', 'full', 'cancelled', 'completed'],
+      enum: ['open', 'full', 'cancelled', 'completed', 'draft'],
       default: 'open',
     },
     participants: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    // New fields for enhanced features
+    tags: {
+      type: [String],
+      default: [],
+    },
+    isDraft: {
+      type: Boolean,
+      default: false,
+    },
+    recurrence: {
+      enabled: { type: Boolean, default: false },
+      pattern: { 
+        type: String, 
+        enum: ['daily', 'weekly', 'biweekly', 'monthly'],
+        default: 'weekly'
+      },
+      endDate: { type: Date },
+      daysOfWeek: [{ type: Number, min: 0, max: 6 }],
+      parentEventId: { type: Schema.Types.ObjectId, ref: 'Event' },
+    },
+    savedBy: [
       {
         type: Schema.Types.ObjectId,
         ref: 'User',
@@ -161,6 +200,9 @@ EventSchema.index({ date: 1 });
 EventSchema.index({ location: 1 });
 EventSchema.index({ status: 1 });
 EventSchema.index({ createdAt: -1 });
+EventSchema.index({ tags: 1 });
+EventSchema.index({ isDraft: 1 });
+EventSchema.index({ 'recurrence.parentEventId': 1 });
 
 // Virtual to check if event is full
 EventSchema.virtual('isFull').get(function (this: IEvent) {
